@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cassert>
 #include <list>
+#include <map>
+#include <set>
 
 float random_uniform(float min=0, float max=1) { return min+(max-min)*static_cast<float>(rand())/RAND_MAX; }
 
@@ -43,7 +45,6 @@ struct Map
     T *flat;
 };
 
-
 struct World
 {
     struct Plant {
@@ -51,35 +52,30 @@ struct World
         Point position;
         float eff;
     };
-    typedef std::list<Plant> Plants;
+    typedef std::set<Plant*> Plants;
 
-    struct Player {
-        struct Agent {
-            Agent(const Point &position, const Player *player, float energy=50) : position(position), player(player), energy(energy) {}
+    struct Player
+    {
+
+        struct Agent
+        {
+            Agent(const Point &position, const Player *player) : position(position), player(player) {}
             Point position;
             const Player *player;
-            float energy;
         };
-        typedef std::list<Agent> Agents;
+        typedef std::set<Agent*> Agents;
 
-        Player(const std::string &name, unsigned int color, World *world) : name(name), color(color), world(world) {}
-
-        void spawnAgent(const Point &position) {
-            assert(world->occupied.get(position) == false);
-            Agent agent(position,this);
-            agents.push_back(agent);
-            world->occupied.get(position) = true;
-        }
+        Player(const std::string &name, unsigned int color) : name(name), color(color) {}
 
         const std::string name;
         const unsigned int color;
-        World *world;
         Agents agents;
     };
-    typedef std::list<Player> Players;
+    typedef std::set<Player*> Players;
+    typedef std::map<Player::Agent*,float> AgentEnergies;
 
 
-    World(int width=300, int height=300, int nplants=12) : width(width), height(height), altitude(width,height), occupied(width,height) {
+    World(int width=30, int height=30, int nplants=12) : width(width), height(height), altitude(width,height), occupied(width,height) {
             Map<float> altitude_tmp(width+2,height+2);
             for (int i=0; i<altitude_tmp.size; i++) { altitude_tmp.flat[i] = random_uniform(); }
 
@@ -92,30 +88,49 @@ struct World
             }
 
             for (int i=0; i<nplants; i++) {
-                Plant plant(Point::random(width,height),random_uniform(5,11));
-                plants.push_back(plant);
+                Plant *plant = new Plant(Point::random(width,height),random_uniform(5,11));
+                plants.insert(plant);
             }
 
             for (int i=0; i<occupied.size; i++) { occupied.flat[i] = false; }
     }
 
+    ~World()
+    {
+        for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) { delete *i; }
+        for (Players::const_iterator i=players.begin(); i!=players.end(); i++) { delete *i; }
+    }
+
+
+    //FIXME destructor
+
     void addPlayer(const std::string &name, unsigned int color) {
         Point initial_position(-1,-1);
-        for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (occupied.get(i->position) == false) {
-            initial_position = i->position;
+        for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (occupied.get((*i)->position) == false) {
+            initial_position = (*i)->position;
         }
 
-        Player player(name,color,this);
-        player.spawnAgent(initial_position);
-        players.push_back(player);
+        Player *player = new Player(name,color);
+        players.insert(player);
+        spawnAgent(player,initial_position);
+    }
+
+    void spawnAgent(Player *player, const Point &position) {
+        assert(players.find(player) != players.end());
+        assert(occupied.get(position) == false);
+        occupied.get(position) = true;
+        Player::Agent *agent = new Player::Agent(position,player);
+        player->agents.insert(agent);
+        energies[agent] = 50.;
     }
 
     void printReport() const {
         printf("size=%dx%d\n",width,height);
         printf("nplants=%d\n",plants.size());
-        printf("nplayers=%d\n",players.size());
+        printf("nplayers=%d nagents=%d\n",players.size(),energies.size());
         for (Players::const_iterator i=players.begin(); i!=players.end(); i++) {
-            printf("\tname=%s nagents=%d\n",i->name.c_str(),i->agents.size());
+            const Player *player = *i;
+            printf("\tname=%s nagents=%d\n",player->name.c_str(),player->agents.size());
         }
     }
 
@@ -124,6 +139,7 @@ struct World
     Map<bool> occupied;
     Plants plants;
     Players players;
+    AgentEnergies energies;
 };
 
 class WorldWidget : public QWidget
@@ -147,11 +163,14 @@ public:
                 image.setPixel(x,y,color);
             }
             for (World::Plants::const_iterator i=world.plants.begin(); i!=world.plants.end(); i++) {
-                image.setPixel(i->position.x,i->position.y,qRgb(0,255,0));
+                const World::Plant *plant = *i;
+                image.setPixel(plant->position.x,plant->position.y,qRgb(0,255,0));
             }
             for (World::Players::const_iterator i=world.players.begin(); i!=world.players.end(); i++) {
-                for (World::Player::Agents::const_iterator j=i->agents.begin(); j!=i->agents.end(); j++) {
-                    image.setPixel(j->position.x,j->position.y,i->color);
+                const World::Player *player = *i;
+                for (World::Player::Agents::const_iterator j=player->agents.begin(); j!=player->agents.end(); j++) {
+                    const World::Player::Agent *agent = *j;
+                    image.setPixel(agent->position.x,agent->position.y,player->color);
                 }
             }
             image_need_update = false;
@@ -160,7 +179,7 @@ public:
         Q_UNUSED(event);
         QPainter painter(this);
         painter.translate(rect().center());
-        painter.scale(2.,2.);
+        painter.scale(20,20);
         painter.translate(-image.width()/2.,-image.height()/2.);
         painter.drawImage(QPoint(),image);
 
