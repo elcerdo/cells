@@ -40,10 +40,9 @@ def main():
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
         mind1 = get_mind(config.get('minds', 'mind1'))
-
         mind2 = get_mind(config.get('minds', 'mind2'))
 
-    except Exception as e:
+    except ImportError as e:
         print 'Got error: %s' % e
         config.add_section('minds')
         config.set('minds', 'mind2', 'mind2')
