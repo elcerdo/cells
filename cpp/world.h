@@ -21,14 +21,6 @@ struct World
         typedef std::string Message;
         typedef std::list<Message> Messages;
 
-        struct Agent
-        {
-            Agent(const Point &position, const Player *player);
-            Point position;
-            const Player *player;
-        };
-        typedef std::set<Agent*> Agents;
-
         struct Data {
             Data(const Point &agent_position, float agent_energy, int world_width, int world_height);
             const Point &agent_position;
@@ -36,8 +28,21 @@ struct World
             const int world_width,world_height;
         };
 
-        enum Action {SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
+        struct Action {
+            enum Type {SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
+            Type type;
+            int datax;
+            int datay;
+        };
         typedef Action (*GetAction)(Data &data);
+
+        struct Agent
+        {
+            Agent(const Point &position, const Player *player);
+            Point position;
+            const Player *player;
+        };
+        typedef std::set<Agent*> Agents;
 
         Player(const std::string &name, unsigned int color, GetAction action);
         ~Player();
@@ -57,6 +62,8 @@ struct World
     ~World();
 
     void addPlayer(const std::string &name, unsigned int color, Player::GetAction action); 
+    float getEnergy(Player::Agent *agent) const;
+    void tick();
     void spawnAgent(Player *player, const Point &position);
     void printReport() const;
 

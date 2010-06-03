@@ -1,6 +1,8 @@
 #include "world.h"
 
 #include <cstdio>
+#include <algorithm>
+#include <vector>
 
 World::Plant::Plant(const Point &position,float eff) : position(position), eff(eff) {}
 
@@ -67,6 +69,13 @@ void World::spawnAgent(Player *player, const Point &position)
     energies[agent] = 50.;
 }
 
+float World::getEnergy(Player::Agent *agent) const 
+{
+    AgentEnergies::const_iterator energy = energies.find(agent);
+    assert(energy != energies.end());
+    return energy->second;
+}
+
 void World::printReport() const
 {
     printf("size=%dx%d\n",width,height);
@@ -78,3 +87,33 @@ void World::printReport() const
     }
 }
 
+void World::tick() {
+    typedef std::vector< std::pair<Player::Agent*,Player::Action> > Actions;
+
+    printf("getting actions\n");
+    int nagents = 0;
+    Actions actions;
+    for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) {
+        Player *player = *iplayer;
+        nagents += player->agents.size();
+        for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
+            Player::Agent *agent = *iagent;
+            Player::Data data(agent->position,getEnergy(agent),width,height);
+            actions.push_back(std::make_pair(agent,player->action(data)));
+        }
+    }
+    std::random_shuffle(actions.begin(),actions.end());
+    printf("got %d actions for %d/%d agents\n",actions.size(),nagents,energies.size());
+
+    for (Actions::const_iterator iaction=actions.begin(); iaction!=actions.end(); iaction++) {
+        Player::Agent *agent = iaction->first;
+        const Player::Action &action = iaction->second;
+        switch (action.type) {
+        case Player::Action::MOVE:
+            break;
+        default:
+            printf("unknow action\n");
+            break;
+        }
+    }
+}

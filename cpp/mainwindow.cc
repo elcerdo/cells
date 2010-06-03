@@ -6,12 +6,16 @@
 
 World::Player::Action action_player1(World::Player::Data &data) {
     Q_UNUSED(data);
-    return World::Player::SPAWN;
+    qDebug("player 1 agent");
+    World::Player::Action action;
+    return action;
 }
 
 World::Player::Action action_player2(World::Player::Data &data) {
     Q_UNUSED(data);
-    return World::Player::EAT;
+    qDebug("player 2 agent");
+    World::Player::Action action;
+    return action;
 }
 
 MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height)
@@ -43,5 +47,6 @@ MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(par
 
 void MainWindow::tickWorld()
 {
+    world.tick();
     qDebug("ticked");
 }
