@@ -33,6 +33,7 @@ void WorldWidget::paintEvent(QPaintEvent *event)
         for (int x=0; x<world.width; x++) for (int y=0; y<world.height; y++) {
             float energy = world.energy.get(x,y);
             float normalized = normalize(energy,energy_max);
+            normalized = world.occupied.get(x,y); //FIXME debug occupied
             uint color = qRgba(0,127,255,255*normalized);
             image_energy.setPixel(x,y,color);
         }

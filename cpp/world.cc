@@ -6,10 +6,10 @@
 
 World::Plant::Plant(const Point &position,float eff) : position(position), eff(eff) {}
 
-World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), arguments(arguments), player(player) {}
+World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), loaded(false), arguments(arguments), player(player) {}
 
-World::Player::Data::Data(const Point &agent_position, const Arguments &agent_arguments, float agent_energy, int world_width, int world_height) :
-    agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy),
+World::Player::Data::Data(const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, int world_width, int world_height) :
+    agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     world_width(world_width), world_height(world_height) {}
 
 World::Player::Player(const std::string &name, unsigned int color, GetAction action) : name(name), color(color), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
@@ -69,7 +69,7 @@ void World::spawnAgent(const Point &position, const Player::Arguments &arguments
     occupied.get(position) = true;
     Player::Agent *agent = new Player::Agent(position,arguments,player);
     player->agents.insert(agent);
-    energies[agent] = 50.;
+    energies[agent] = 25.;
 }
 
 void World::printReport() const
@@ -102,6 +102,13 @@ World::Player::Action World::Player::Action::moveTo(const Point &dest)
     return action;
 }
 
+World::Player::Action World::Player::Action::eat()
+{
+    Action action;
+    action.type = EAT;
+    return action;
+}
+
 World::Player::Action World::Player::Action::pass()
 {
     Action action;
@@ -118,27 +125,32 @@ bool World::isPositionValid(const Point &point) const
 void World::tick() {
     typedef std::vector< std::pair<Player::Agent*,Player::Action> > Actions;
 
-    printf("getting actions\n");
-    int nagents = 0;
+    // getting actions
     Actions actions;
-    for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) {
-        Player *player = *iplayer;
-        nagents += player->agents.size();
-        for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
-            Player::Agent *agent = *iagent;
-            Player::Data data(agent->position,agent->arguments,energies[agent],width,height);
-            actions.push_back(std::make_pair(agent,player->action(data)));
+    {
+        unsigned int nagents = 0;
+        for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) {
+            Player *player = *iplayer;
+            nagents += player->agents.size();
+            for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
+                Player::Agent *agent = *iagent;
+                Player::Data data(agent->position,agent->arguments,energies[agent],agent->loaded,width,height);
+                actions.push_back(std::make_pair(agent,player->action(data)));
+            }
         }
+        std::random_shuffle(actions.begin(),actions.end());
+        assert(actions.size() == nagents);
+        assert(actions.size() == energies.size());
     }
-    std::random_shuffle(actions.begin(),actions.end());
-    printf("got %d actions for %d/%d agents\n",actions.size(),nagents,energies.size());
 
+    // parsing actions
     for (Actions::const_iterator iaction=actions.begin(); iaction!=actions.end(); iaction++) {
         Player::Agent *agent = iaction->first;
         const Player::Action &action = iaction->second;
         
         energies[agent]--;
 
+        //FIXME attack not implemented
         if (action.type == Player::Action::MOVE) {
             Point position_new = agent->position.getNewPositionToDestination(action.data);
             if (isPositionValid(position_new) and abs(altitude.get(agent->position)-altitude.get(position_new))<4.) {
@@ -152,13 +164,38 @@ void World::tick() {
                 energies[agent] -= 50;
                 spawnAgent(position_new,action.arguments,const_cast<Player*>(agent->player)); //FIXME dirty hack
             }
+        } else if (action.type == Player::Action::EAT) {
+            float meal = energy.get(agent->position);
+            energy.get(agent->position) = 0;
+            energies[agent] += meal;
+        } else if (action.type == Player::Action::LIFT) { //FIXME untested
+            if (not agent->loaded and altitude.get(agent->position)>1) {
+                agent->loaded = true;
+                altitude.get(agent->position)--;
+            }
+        } else if (action.type == Player::Action::DROP) { //FIXME untested
+            if (agent->loaded) {
+                agent->loaded = false;
+                altitude.get(agent->position)++;
+            }
         } else if (action.type == Player::Action::PASS) {
         } else {
-            printf("unknow action\n");
+            printf("unknow action %d\n",action.type);
         }
     }
 
-    printf("updating plants\n");
+    // killing agents
+    for (AgentEnergies::iterator ipair=energies.begin(); ipair!= energies.end();) {
+        AgentEnergies::iterator ipair_copy = ipair++;
+        if (ipair_copy->second<0) {
+            occupied.get(ipair_copy->first->position) = false;
+            delete ipair_copy->first;
+            const_cast<Player*>(ipair_copy->first->player)->agents.erase(ipair_copy->first); //FIXME dirty hack
+            energies.erase(ipair_copy);
+        }
+    }
+
+    // updating plants
     for (World::Plants::const_iterator iplant=plants.begin(); iplant!=plants.end(); iplant++) {
         const Plant *plant = *iplant;
         for (int dx=-1; dx<2; dx++) for (int dy=-1; dy<2; dy++) {

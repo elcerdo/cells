@@ -24,10 +24,11 @@ struct World
         typedef std::vector<int> Arguments;
 
         struct Data {
-            Data(const Point &agent_position, const Arguments &arguments, float agent_energy, int world_width, int world_height);
+            Data(const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, int world_width, int world_height);
             const Point &agent_position;
             const Arguments &agent_arguments;
             const float agent_energy;
+            const float agent_loaded;
             const int world_width,world_height;
         };
 
@@ -35,6 +36,7 @@ struct World
             static Action moveTo(const Point &dest);
             static Action pass();
             static Action spawn(const Point &dest, const Arguments &arguments);
+            static Action eat();
             enum Type {PASS, SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
             Type type;
             Point data;
@@ -48,6 +50,7 @@ struct World
         {
             Agent(const Point &position, const Arguments &arguments, const Player *player);
             Point position;
+            bool loaded;
             const Arguments arguments;
             const Player *player;
         };

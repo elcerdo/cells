@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QSlider>
 #include "worldwidget.h"
 
 World::Player::Action action_player1(World::Player::Data &data) {
@@ -11,20 +12,20 @@ World::Player::Action action_player1(World::Player::Data &data) {
 
 World::Player::Action action_player2(World::Player::Data &data) {
     if (data.agent_arguments.empty()) {
-        if (data.agent_energy>40) {
+        if (data.agent_energy>70) {
             Point target = Point::random(data.world_width,data.world_height);
             World::Player::Arguments args;
             args.push_back(target.x);
             args.push_back(target.y);
             return World::Player::Action::spawn(target,args);
         }
-        return World::Player::Action::pass();
+        return World::Player::Action::eat();
     }
 
     return World::Player::Action::moveTo(Point(data.agent_arguments[0],data.agent_arguments[1]));
 }
 
-MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height)
+MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height), nworld_tick(0), speed(1)
 {
     {
         world.addPlayer("player1",qRgb(255,0,0),action_player1);
@@ -52,21 +53,41 @@ MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(par
         world_tick->setCheckable(true);
         connect(world_tick,SIGNAL(toggled(bool)),SLOT(startTickWorldTimer(bool)));
         central_layout->addWidget(world_tick);
+
+        QSlider *world_speed = new QSlider(Qt::Horizontal,this);
+        world_speed->setRange(1,10);
+        connect(world_speed,SIGNAL(valueChanged(int)),SLOT(setSpeed(int)));
+        central_layout->addWidget(world_speed);
     }
 
     setCentralWidget(central_widget);
     resize(800,700);
 }
 
+void MainWindow::setSpeed(int new_speed)
+{
+    if (new_speed<1 or new_speed>10) return;
+    speed = new_speed;
+    world_tick_timer->setInterval(30./speed);
+}
+
 void MainWindow::startTickWorldTimer(bool start)
 {
-    if (start) world_tick_timer->start();
-    else world_tick_timer->stop();
+    if (start) {
+        nworld_tick = 0;
+        world_tick_timer->start();
+        world_tick_time.restart();
+    } else {
+        world_tick_timer->stop();
+        float elapsed = world_tick_time.elapsed()/1000.;
+        qDebug("simulated %d ticks in %.2fs %.2fticks/s",nworld_tick,elapsed,nworld_tick/elapsed);
+    }
 }
 
 void MainWindow::tickWorld()
 {
     world.tick();
-    emit worldTicked();
+    nworld_tick++;
+    if (nworld_tick%speed == 0) emit worldTicked();
 }
 

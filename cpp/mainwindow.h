@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QTime>
 #include "world.h"
 
 class MainWindow : public QMainWindow
@@ -13,11 +14,15 @@ public:
 public slots:
     void tickWorld();
     void startTickWorldTimer(bool);
+    void setSpeed(int speed);
 signals:
     void worldTicked();
 protected:
     QTimer *world_tick_timer;
+    QTime world_tick_time;
     World world;
+    int nworld_tick;
+    int speed;
 };
 
 
