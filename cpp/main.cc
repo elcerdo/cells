@@ -45,8 +45,9 @@ struct Map
     T *flat;
 };
 
-struct World
+struct World : public QObject
 {
+Q_OBJECT
     struct Plant {
         Plant(const Point &position,float eff) : position(position), eff(eff) {}
         Point position;
@@ -56,19 +57,40 @@ struct World
 
     struct Player
     {
+        typedef std::string Message;
+        typedef std::list<Message> Messages;
 
         struct Agent
         {
             Agent(const Point &position, const Player *player) : position(position), player(player) {}
+
             Point position;
             const Player *player;
         };
         typedef std::set<Agent*> Agents;
 
-        Player(const std::string &name, unsigned int color) : name(name), color(color) {}
+        struct Data {
+            Data(const Point &agent_position, float agent_energy, int world_width, int world_height) : agent_position(agent_position), agent_energy(agent_energy),
+                                                                                                       world_width(world_width), world_height(world_height) {}
+            const Point &agent_position;
+            const float agent_energy;
+            const int world_width,world_height;
+        };
+
+        enum Action {SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
+        typedef Action (*GetAction)(Data &data);
+
+        Player(const std::string &name, unsigned int color, GetAction action) : name(name), color(color), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
+        ~Player() {
+            delete messages_inbox;
+            delete messages_outbox;
+        }
 
         const std::string name;
         const unsigned int color;
+        Messages *messages_inbox;
+        Messages *messages_outbox;
+        GetAction action;
         Agents agents;
     };
     typedef std::set<Player*> Players;
@@ -99,18 +121,16 @@ struct World
     {
         for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) { delete *i; }
         for (Players::const_iterator i=players.begin(); i!=players.end(); i++) { delete *i; }
+        for (AgentEnergies::const_iterator i=energies.begin(); i!=energies.end(); i++) { delete i->first; }
     }
 
-
-    //FIXME destructor
-
-    void addPlayer(const std::string &name, unsigned int color) {
+    void addPlayer(const std::string &name, unsigned int color, Player::GetAction action) {
         Point initial_position(-1,-1);
         for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (occupied.get((*i)->position) == false) {
             initial_position = (*i)->position;
         }
 
-        Player *player = new Player(name,color);
+        Player *player = new Player(name,color,action);
         players.insert(player);
         spawnAgent(player,initial_position);
     }
@@ -140,6 +160,11 @@ struct World
     Plants plants;
     Players players;
     AgentEnergies energies;
+
+public slot:
+    void tick() {
+        qDebug("tick");
+    }
 };
 
 class WorldWidget : public QWidget
@@ -192,14 +217,21 @@ protected:
 };
 
 
+World::Player::Action action_player1(World::Player::Data &data) {
+    return World::Player::SPAWN;
+}
+
+World::Player::Action action_player2(World::Player::Data &data) {
+    return World::Player::EAT;
+}
 
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
     QApplication app(argc,argv);
     World world;
-    world.addPlayer("player1",qRgb(255,0,0));
-    world.addPlayer("player2",qRgb(0,0,255));
+    world.addPlayer("player1",qRgb(255,0,0),action_player1);
+    world.addPlayer("player2",qRgb(0,0,255),action_player2);
     world.printReport();
     WorldWidget widget(world);
 
