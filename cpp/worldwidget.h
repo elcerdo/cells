@@ -15,7 +15,7 @@ public slots:
     void imageNeedUpdate();
 protected:
     static const float altitude_max = 5.;
-    static const float energy_max = 10.;
+    static const float energy_max = 100.;
     const World &world;
     bool image_need_update;
     QImage image_map;

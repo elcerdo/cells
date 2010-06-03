@@ -1,5 +1,11 @@
 #include "worldwidget.h"
 
+float normalize(float value, float value_max) {
+    if (value<0) return 0;
+    if (value>value_max) return 1.;
+    return value/value_max;
+}
+
 WorldWidget::WorldWidget(const World &world, QWidget *parent) : QWidget(parent), world(world), image_need_update(true),
                                                                 image_map(QSize(world.width,world.height),QImage::Format_RGB32),
                                                                 image_energy(QSize(world.width,world.height),QImage::Format_ARGB32),
@@ -19,13 +25,15 @@ void WorldWidget::paintEvent(QPaintEvent *event)
     if (image_need_update) {
         for (int x=0; x<world.width; x++) for (int y=0; y<world.height; y++) {
             float altitude = world.altitude.get(x,y);
-            uint color = qRgb(255*altitude/altitude_max,127*altitude/altitude_max,63*altitude/altitude_max);
+            float normalized = normalize(altitude,altitude_max);
+            uint color = qRgb(255*normalized,127*normalized,63*normalized);
             image_map.setPixel(x,y,color);
         }
 
         for (int x=0; x<world.width; x++) for (int y=0; y<world.height; y++) {
             float energy = world.energy.get(x,y);
-            uint color = qRgba(0,127,255,64*energy/energy_max);
+            float normalized = normalize(energy,energy_max);
+            uint color = qRgba(0,127,255,255*normalized);
             image_energy.setPixel(x,y,color);
         }
 

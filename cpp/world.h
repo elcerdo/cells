@@ -12,8 +12,8 @@ struct World
 {
     struct Plant {
         Plant(const Point &position,float eff);
-        Point position;
-        float eff;
+        const Point position;
+        const float eff;
     };
     typedef std::set<Plant*> Plants;
 

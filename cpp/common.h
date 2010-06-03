@@ -24,17 +24,21 @@ struct Map
         delete [] flat;
     }
 
+    bool isValid(int x, int y) const {
+        return x>=0 and x<width and y>=0 and y<height; 
+    }
+
+    bool isValid(const Point &point) const { return isValid(point.x,point.y); }
+
     T &get(int x, int y) {
-        assert(x>=0 and x<width);
-        assert(y>=0 and y<height);
+        assert(isValid(x,y));
         return flat[x*height+y];
     }
 
     T &get(const Point &point) { return get(point.x,point.y); }
 
     const T &get(int x, int y) const {
-        assert(x>=0 and x<width);
-        assert(y>=0 and y<height);
+        assert(isValid(x,y));
         return flat[x*height+y];
     }
     

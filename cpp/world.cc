@@ -111,8 +111,7 @@ World::Player::Action World::Player::Action::pass()
 
 bool World::isPositionValid(const Point &point) const
 {
-    if (point.x<0 or point.x>=width) return false;
-    if (point.y<0 or point.y>=height) return false;
+    if (not occupied.isValid(point)) return false;
     return not occupied.get(point);
 }
 
@@ -158,4 +157,16 @@ void World::tick() {
             printf("unknow action\n");
         }
     }
+
+    printf("updating plants\n");
+    for (World::Plants::const_iterator iplant=plants.begin(); iplant!=plants.end(); iplant++) {
+        const Plant *plant = *iplant;
+        for (int dx=-1; dx<2; dx++) for (int dy=-1; dy<2; dy++) {
+            Point position = plant->position;
+            position.x += dx;
+            position.y += dy;
+            if (energy.isValid(position)) energy.get(position) += plant->eff;
+        }
+    }
+
 }
