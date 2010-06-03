@@ -3,7 +3,6 @@
 WorldWidget::WorldWidget(const World &world, QWidget *parent) : QWidget(parent), world(world), image_need_update(true), image(QSize(world.width,world.height),QImage::Format_RGB32)
 {
     setMinimumSize(300,300);
-    resize(700,700);
 }
 
 void WorldWidget::setImageNeedUpdate()
@@ -37,7 +36,11 @@ void WorldWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
     QPainter painter(this);
     painter.translate(rect().center());
-    painter.scale(20,20);
+
+    float ratio_width  = static_cast<float>(rect().width())/world.width;
+    float ratio_height = static_cast<float>(rect().height())/world.height;
+    float ratio = ratio_width < ratio_height ? ratio_width : ratio_height;
+    painter.scale(ratio,ratio);
     painter.translate(-image.width()/2.,-image.height()/2.);
     painter.drawImage(QPoint(),image);
 
