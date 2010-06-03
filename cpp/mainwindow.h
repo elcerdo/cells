@@ -2,6 +2,7 @@
 #define __MAINWINDOW_H__
 
 #include <QMainWindow>
+#include <QTimer>
 #include "world.h"
 
 class MainWindow : public QMainWindow
@@ -11,7 +12,11 @@ public:
     MainWindow(int width, int height, QWidget *parent=NULL);
 public slots:
     void tickWorld();
+    void startTickWorldTimer(bool);
+signals:
+    void worldTicked();
 protected:
+    QTimer *world_tick_timer;
     World world;
 };
 

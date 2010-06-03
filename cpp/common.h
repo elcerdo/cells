@@ -6,8 +6,10 @@
 
 float random_uniform(float min=0, float max=1);
 
-struct Point {
-    Point(int x, int y);
+struct Point
+{
+    Point(int x=0, int y=0);
+    Point getNewPositionToDestination(const Point &dest) const;
     static Point random(int width, int height);
     int x,y;
 };

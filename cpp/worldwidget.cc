@@ -1,11 +1,14 @@
 #include "worldwidget.h"
 
-WorldWidget::WorldWidget(const World &world, QWidget *parent) : QWidget(parent), world(world), image_need_update(true), image(QSize(world.width,world.height),QImage::Format_RGB32)
+WorldWidget::WorldWidget(const World &world, QWidget *parent) : QWidget(parent), world(world), image_need_update(true),
+                                                                image_map(QSize(world.width,world.height),QImage::Format_RGB32),
+                                                                image_energy(QSize(world.width,world.height),QImage::Format_ARGB32),
+                                                                image_overlay(QSize(world.width,world.height),QImage::Format_ARGB32)
 {
     setMinimumSize(300,300);
 }
 
-void WorldWidget::setImageNeedUpdate()
+void WorldWidget::imageNeedUpdate()
 {
     image_need_update = true;
     repaint();
@@ -16,18 +19,27 @@ void WorldWidget::paintEvent(QPaintEvent *event)
     if (image_need_update) {
         for (int x=0; x<world.width; x++) for (int y=0; y<world.height; y++) {
             float altitude = world.altitude.get(x,y);
-            uint color = qRgb(255*altitude,127*altitude,63*altitude);
-            image.setPixel(x,y,color);
+            uint color = qRgb(255*altitude/altitude_max,127*altitude/altitude_max,63*altitude/altitude_max);
+            image_map.setPixel(x,y,color);
         }
+
+        for (int x=0; x<world.width; x++) for (int y=0; y<world.height; y++) {
+            float energy = world.energy.get(x,y);
+            uint color = qRgba(0,127,255,64*energy/energy_max);
+            image_energy.setPixel(x,y,color);
+        }
+
+        image_overlay.fill(qRgba(0,0,0,0));
         for (World::Plants::const_iterator i=world.plants.begin(); i!=world.plants.end(); i++) {
             const World::Plant *plant = *i;
-            image.setPixel(plant->position.x,plant->position.y,qRgb(0,255,0));
+            image_overlay.setPixel(plant->position.x,plant->position.y,qRgb(0,255,0));
         }
+
         for (World::Players::const_iterator i=world.players.begin(); i!=world.players.end(); i++) {
             const World::Player *player = *i;
             for (World::Player::Agents::const_iterator j=player->agents.begin(); j!=player->agents.end(); j++) {
                 const World::Player::Agent *agent = *j;
-                image.setPixel(agent->position.x,agent->position.y,player->color);
+                image_overlay.setPixel(agent->position.x,agent->position.y,player->color);
             }
         }
         image_need_update = false;
@@ -41,7 +53,9 @@ void WorldWidget::paintEvent(QPaintEvent *event)
     float ratio_height = static_cast<float>(rect().height())/world.height;
     float ratio = ratio_width < ratio_height ? ratio_width : ratio_height;
     painter.scale(ratio,ratio);
-    painter.translate(-image.width()/2.,-image.height()/2.);
-    painter.drawImage(QPoint(),image);
+    painter.translate(-world.width/2.,-world.height/2.);
+    painter.drawImage(QPoint(),image_map);
+    painter.drawImage(QPoint(),image_energy);
+    painter.drawImage(QPoint(),image_overlay);
 
 }

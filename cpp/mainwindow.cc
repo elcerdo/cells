@@ -6,16 +6,22 @@
 
 World::Player::Action action_player1(World::Player::Data &data) {
     Q_UNUSED(data);
-    qDebug("player 1 agent");
-    World::Player::Action action;
-    return action;
+    return World::Player::Action::moveTo(Point(10,10));
 }
 
 World::Player::Action action_player2(World::Player::Data &data) {
-    Q_UNUSED(data);
-    qDebug("player 2 agent");
-    World::Player::Action action;
-    return action;
+    if (data.agent_arguments.empty()) {
+        if (data.agent_energy>40) {
+            Point target = Point::random(data.world_width,data.world_height);
+            World::Player::Arguments args;
+            args.push_back(target.x);
+            args.push_back(target.y);
+            return World::Player::Action::spawn(target,args);
+        }
+        return World::Player::Action::pass();
+    }
+
+    return World::Player::Action::moveTo(Point(data.agent_arguments[0],data.agent_arguments[1]));
 }
 
 MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height)
@@ -32,21 +38,35 @@ MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(par
 
     {
         WorldWidget *world_widget = new WorldWidget(world,central_widget);
+        connect(this,SIGNAL(worldTicked()),world_widget,SLOT(imageNeedUpdate()));
         central_layout->addWidget(world_widget);
     }
 
     {
+        world_tick_timer = new QTimer(this);
+        world_tick_timer->setInterval(30);
+        world_tick_timer->setSingleShot(false);
+        connect(world_tick_timer,SIGNAL(timeout()),SLOT(tickWorld()));
+
         QPushButton *world_tick = new QPushButton("tick world",central_widget);
+        world_tick->setCheckable(true);
+        connect(world_tick,SIGNAL(toggled(bool)),SLOT(startTickWorldTimer(bool)));
         central_layout->addWidget(world_tick);
-        connect(world_tick,SIGNAL(clicked()),SLOT(tickWorld()));
     }
 
     setCentralWidget(central_widget);
     resize(800,700);
 }
 
+void MainWindow::startTickWorldTimer(bool start)
+{
+    if (start) world_tick_timer->start();
+    else world_tick_timer->stop();
+}
+
 void MainWindow::tickWorld()
 {
     world.tick();
-    qDebug("ticked");
+    emit worldTicked();
 }
+

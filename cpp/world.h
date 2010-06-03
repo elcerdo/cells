@@ -3,6 +3,7 @@
 
 #include <set>
 #include <list>
+#include <vector>
 #include <map>
 #include <string>
 #include "common.h"
@@ -20,26 +21,34 @@ struct World
     {
         typedef std::string Message;
         typedef std::list<Message> Messages;
+        typedef std::vector<int> Arguments;
 
         struct Data {
-            Data(const Point &agent_position, float agent_energy, int world_width, int world_height);
+            Data(const Point &agent_position, const Arguments &arguments, float agent_energy, int world_width, int world_height);
             const Point &agent_position;
+            const Arguments &agent_arguments;
             const float agent_energy;
             const int world_width,world_height;
         };
 
         struct Action {
-            enum Type {SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
+            static Action moveTo(const Point &dest);
+            static Action pass();
+            static Action spawn(const Point &dest, const Arguments &arguments);
+            enum Type {PASS, SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
             Type type;
-            int datax;
-            int datay;
+            Point data;
+            Arguments arguments;
+        private:
+            Action();
         };
         typedef Action (*GetAction)(Data &data);
 
         struct Agent
         {
-            Agent(const Point &position, const Player *player);
+            Agent(const Point &position, const Arguments &arguments, const Player *player);
             Point position;
+            const Arguments arguments;
             const Player *player;
         };
         typedef std::set<Agent*> Agents;
@@ -62,13 +71,14 @@ struct World
     ~World();
 
     void addPlayer(const std::string &name, unsigned int color, Player::GetAction action); 
-    float getEnergy(Player::Agent *agent) const;
     void tick();
-    void spawnAgent(Player *player, const Point &position);
+    void spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player);
     void printReport() const;
+    bool isPositionValid(const Point &point) const;
 
     const int width,height;
     Map<float> altitude;
+    Map<float> energy;
     Map<bool> occupied;
     Plants plants;
     Players players;
