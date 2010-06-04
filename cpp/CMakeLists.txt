@@ -6,6 +6,12 @@ add_library(cellsworld
     world.cc
     minds.cc)
 
+add_executable(cellbenchmark
+    cellbenchmark.cc)
+
+target_link_libraries(cellbenchmark
+    cellsworld)
+
 find_package(Qt4)
 if(QT_FOUND)
     include(${QT_USE_FILE})
