@@ -3,6 +3,9 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QSlider>
+#include <QStatusBar>
+#include <QDockWidget>
+#include <sstream>
 #include "worldwidget.h"
 
 World::Player::Action action_player1(World::Player::Data &data) {
@@ -28,12 +31,13 @@ World::Player::Action action_player2(World::Player::Data &data) {
 MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height), nworld_tick(0), speed(1)
 {
     {
-        world.addPlayer("player1",qRgb(255,0,0),action_player1);
-        world.addPlayer("player2",qRgb(0,0,255),action_player2);
-        world.printReport();
+        world.addPlayer("player1",qRgb(255,0,0),action_player2);
+        world.addPlayer("player2",qRgb(0,0,255),action_player1);
+        world.addPlayer("player3",qRgb(0,255,255),action_player2);
     }
 
     QWidget *central_widget = new QWidget(this);
+    setCentralWidget(central_widget);
     QVBoxLayout *central_layout = new QVBoxLayout(central_widget);
     central_widget->setLayout(central_layout);
 
@@ -60,8 +64,28 @@ MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(par
         central_layout->addWidget(world_speed);
     }
 
-    setCentralWidget(central_widget);
-    resize(800,700);
+    {
+        QDockWidget *report_dock = new QDockWidget("report",this);
+        addDockWidget(Qt::RightDockWidgetArea,report_dock,Qt::Vertical);
+        QWidget *report_widget = new QWidget(report_dock);
+        report_dock->setWidget(report_widget);
+        QVBoxLayout *report_layout = new QVBoxLayout(report_widget);
+        report_widget->setLayout(report_layout);
+
+        QPushButton *report_update = new QPushButton("update report",report_widget);
+        connect(report_update,SIGNAL(clicked()),SLOT(updateReport()));
+        report_layout->addWidget(report_update);
+
+        report_label = new QLabel(report_widget);
+        report_layout->addWidget(report_label);
+        updateReport();
+
+        report_layout->addStretch();
+        report_widget->setMinimumWidth(300);
+    }
+
+    statusBar()->showMessage("welcome to cells!",1);
+    resize(900,600);
 }
 
 void MainWindow::setSpeed(int new_speed)
@@ -80,7 +104,7 @@ void MainWindow::startTickWorldTimer(bool start)
     } else {
         world_tick_timer->stop();
         float elapsed = world_tick_time.elapsed()/1000.;
-        qDebug("simulated %d ticks in %.2fs %.2fticks/s",nworld_tick,elapsed,nworld_tick/elapsed);
+        statusBar()->showMessage(QString("simulated %1 ticks in %2s %3ticks/s").arg(nworld_tick).arg(elapsed,0,'f',1).arg(nworld_tick/elapsed,0,'f',1));
     }
 }
 
@@ -91,3 +115,9 @@ void MainWindow::tickWorld()
     if (nworld_tick%speed == 0) emit worldTicked();
 }
 
+void MainWindow::updateReport()
+{
+    std::stringstream ss;
+    world.print(ss);
+    report_label->setText(QString::fromStdString(ss.str()));
+}

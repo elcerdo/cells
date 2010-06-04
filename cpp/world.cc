@@ -1,6 +1,6 @@
 #include "world.h"
 
-#include <cstdio>
+#include <cstdio> //FIXME
 #include <algorithm>
 #include <vector>
 
@@ -12,7 +12,7 @@ World::Player::Data::Data(const Point &agent_position, const Arguments &agent_ar
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     world_width(world_width), world_height(world_height) {}
 
-World::Player::Player(const std::string &name, unsigned int color, GetAction action) : name(name), color(color), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
+World::Player::Player(const std::string &name, unsigned int color, GetAction action) : name(name), color(color), deathtick(-1), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
 
 World::Player::~Player()
 {
@@ -20,7 +20,7 @@ World::Player::~Player()
     delete messages_outbox;
 }
 
-World::World(int width, int height, int nplants) : width(width), height(height), altitude(width,height), energy(width,height), occupied(width,height)
+World::World(int width, int height, int nplants) : width(width), height(height), nticks(0), altitude(width,height), energy(width,height), occupied(width,height)
 {
     Map<float> altitude_tmp(width+2,height+2);
     for (int i=0; i<altitude_tmp.size; i++) { altitude_tmp.flat[i] = random_uniform(0,5); }
@@ -72,14 +72,44 @@ void World::spawnAgent(const Point &position, const Player::Arguments &arguments
     energies[agent] = 25.;
 }
 
-void World::printReport() const
+void World::Player::print(std::ostream &os) const
 {
-    printf("size=%dx%d\n",width,height);
-    printf("nplants=%d\n",plants.size());
-    printf("nplayers=%d nagents=%d\n",players.size(),energies.size());
-    for (Players::const_iterator i=players.begin(); i!=players.end(); i++) {
+    os<<name<<" "<<(deathtick<0 ? "alive" : "dead");
+    if (deathtick>=0) os<<" deathtick="<<deathtick;
+    else os<<" nagents="<<agents.size();
+}
+
+struct PlayerSorter
+{
+    bool operator()(const World::Player *a,const World::Player *b) {
+        if (a->deathtick != b->deathtick) return a->deathtick<b->deathtick;
+        if (a->agents.size() != b->agents.size()) return a->agents.size()>b->agents.size();
+        return a<b;
+    }
+};
+
+void World::print(std::ostream &os) const
+{
+    os<<"size="<<width<<"x"<<height<<std::endl;
+    os<<"nticks="<<nticks<<std::endl;
+    os<<"nplants="<<plants.size()<<std::endl;
+    os<<"nplayers="<<players.size()<<" nagents="<<energies.size()<<std::endl;
+
+    os<<std::endl;
+
+    typedef std::vector<Player*> VectorPlayers;
+    VectorPlayers sortable(players.size());
+    std::copy(players.begin(),players.end(),sortable.begin());
+
+    PlayerSorter sorter;
+    std::sort(sortable.begin(),sortable.end(),sorter);
+
+    int k=0;
+    for (VectorPlayers::const_iterator i=sortable.begin(); i!=sortable.end(); i++) {
         const Player *player = *i;
-        printf("\tname=%s nagents=%d\n",player->name.c_str(),player->agents.size());
+        os<<(++k)<<". ";
+        player->print(os);
+        os<<std::endl;
     }
 }
 
@@ -106,6 +136,20 @@ World::Player::Action World::Player::Action::eat()
 {
     Action action;
     action.type = EAT;
+    return action;
+}
+
+World::Player::Action World::Player::Action::lift()
+{
+    Action action;
+    action.type = LIFT;
+    return action;
+}
+
+World::Player::Action World::Player::Action::drop()
+{
+    Action action;
+    action.type = DROP;
     return action;
 }
 
@@ -180,7 +224,7 @@ void World::tick() {
             }
         } else if (action.type == Player::Action::PASS) {
         } else {
-            printf("unknow action %d\n",action.type);
+            std::cerr<<"unknow action "<<action.type<<std::endl;
         }
     }
 
@@ -195,6 +239,12 @@ void World::tick() {
         }
     }
 
+    // flagging dead player
+    for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) if ((*iplayer)->deathtick<0 and (*iplayer)->agents.empty()) {
+        (*iplayer)->deathtick = nticks;
+        printf("%s die\n",(*iplayer)->name.c_str());
+    }
+
     // updating plants
     for (World::Plants::const_iterator iplant=plants.begin(); iplant!=plants.end(); iplant++) {
         const Plant *plant = *iplant;
@@ -206,4 +256,5 @@ void World::tick() {
         }
     }
 
+    nticks++;
 }

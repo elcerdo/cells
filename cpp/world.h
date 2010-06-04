@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iostream>
 #include "common.h"
 
 struct World
@@ -37,6 +38,8 @@ struct World
             static Action pass();
             static Action spawn(const Point &dest, const Arguments &arguments);
             static Action eat();
+            static Action lift();
+            static Action drop(); 
             enum Type {PASS, SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
             Type type;
             Point data;
@@ -59,8 +62,11 @@ struct World
         Player(const std::string &name, unsigned int color, GetAction action);
         ~Player();
 
+        void print(std::ostream &os) const;
+
         const std::string name;
         const unsigned int color;
+        int deathtick;
         Messages *messages_inbox;
         Messages *messages_outbox;
         GetAction action;
@@ -76,10 +82,11 @@ struct World
     void addPlayer(const std::string &name, unsigned int color, Player::GetAction action); 
     void tick();
     void spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player);
-    void printReport() const;
+    void print(std::ostream &os) const;
     bool isPositionValid(const Point &point) const;
 
     const int width,height;
+    int nticks;
     Map<float> altitude;
     Map<float> energy;
     Map<bool> occupied;

@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <cstdlib>
+#include <cstdlib> // for NULL and rand()
 #include <cassert>
 
 float random_uniform(float min=0, float max=1);
