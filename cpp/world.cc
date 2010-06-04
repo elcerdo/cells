@@ -1,6 +1,5 @@
 #include "world.h"
 
-#include <cstdio> //FIXME
 #include <algorithm>
 #include <vector>
 
@@ -12,7 +11,7 @@ World::Player::Data::Data(const Point &agent_position, const Arguments &agent_ar
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     world_width(world_width), world_height(world_height) {}
 
-World::Player::Player(const std::string &name, unsigned int color, GetAction action) : name(name), color(color), deathtick(-1), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
+World::Player::Player(const std::string &name, unsigned int color, Mind *action) : name(name), color(color), deathtick(-1), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
 
 World::Player::~Player()
 {
@@ -20,7 +19,7 @@ World::Player::~Player()
     delete messages_outbox;
 }
 
-World::World(int width, int height, int nplants) : width(width), height(height), nticks(0), altitude(width,height), energy(width,height), occupied(width,height)
+World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackData(NULL), width(width), height(height), nticks(0), altitude(width,height), energy(width,height), occupied(width,height)
 {
     Map<float> altitude_tmp(width+2,height+2);
     for (int i=0; i<altitude_tmp.size; i++) { altitude_tmp.flat[i] = random_uniform(0,5); }
@@ -50,7 +49,15 @@ World::~World()
     for (AgentEnergies::const_iterator i=energies.begin(); i!=energies.end(); i++) { delete i->first; }
 }
 
-void World::addPlayer(const std::string &name, unsigned int color, Player::GetAction action)
+bool World::isGameFinished() const
+{
+    if (energies.empty()) return true; // no agent
+    for (Players::const_iterator i=players.begin(); i!=players.end(); i++) if ((*i)->agents.size() == energies.size()) return true; // all agent belong to one player
+    return false;
+}
+
+
+void World::addPlayer(const std::string &name, unsigned int color, Player::Mind *action)
 {
     Point initial_position(-1,-1);
     for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (occupied.get((*i)->position) == false) {
@@ -90,6 +97,7 @@ struct PlayerSorter
 
 void World::print(std::ostream &os) const
 {
+    os<<"finished="<<isGameFinished()<<std::endl;
     os<<"size="<<width<<"x"<<height<<std::endl;
     os<<"nticks="<<nticks<<std::endl;
     os<<"nplants="<<plants.size()<<std::endl;
@@ -241,8 +249,9 @@ void World::tick() {
 
     // flagging dead player
     for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) if ((*iplayer)->deathtick<0 and (*iplayer)->agents.empty()) {
-        (*iplayer)->deathtick = nticks;
-        printf("%s die\n",(*iplayer)->name.c_str());
+        Player *player = *iplayer;
+        player->deathtick = nticks;
+        if (deadPlayer) deadPlayer(*player,callbackData);
     }
 
     // updating plants

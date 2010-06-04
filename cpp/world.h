@@ -47,7 +47,7 @@ struct World
         private:
             Action();
         };
-        typedef Action (*GetAction)(Data &data);
+        typedef Action Mind(Data &data);
 
         struct Agent
         {
@@ -59,7 +59,7 @@ struct World
         };
         typedef std::set<Agent*> Agents;
 
-        Player(const std::string &name, unsigned int color, GetAction action);
+        Player(const std::string &name, unsigned int color, Mind *action);
         ~Player();
 
         void print(std::ostream &os) const;
@@ -69,7 +69,7 @@ struct World
         int deathtick;
         Messages *messages_inbox;
         Messages *messages_outbox;
-        GetAction action;
+        Mind *action;
         Agents agents;
     };
     typedef std::set<Player*> Players;
@@ -79,11 +79,17 @@ struct World
     World(int width=30, int height=30, int nplants=12);
     ~World();
 
-    void addPlayer(const std::string &name, unsigned int color, Player::GetAction action); 
     void tick();
-    void spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player);
     void print(std::ostream &os) const;
+    void addPlayer(const std::string &name, unsigned int color, Player::Mind *action); 
+    void spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player);
+    bool isGameFinished() const;
+
     bool isPositionValid(const Point &point) const;
+    
+    typedef void Callback(const Player &player, void *callbackData);
+    Callback *deadPlayer;
+    void *callbackData;
 
     const int width,height;
     int nticks;

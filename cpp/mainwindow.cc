@@ -7,33 +7,25 @@
 #include <QDockWidget>
 #include <sstream>
 #include "worldwidget.h"
+#include "minds.h"
 
-World::Player::Action action_player1(World::Player::Data &data) {
-    Q_UNUSED(data);
-    return World::Player::Action::moveTo(Point(10,10));
-}
+static const int message_delay = 4000;
 
-World::Player::Action action_player2(World::Player::Data &data) {
-    if (data.agent_arguments.empty()) {
-        if (data.agent_energy>70) {
-            Point target = Point::random(data.world_width,data.world_height);
-            World::Player::Arguments args;
-            args.push_back(target.x);
-            args.push_back(target.y);
-            return World::Player::Action::spawn(target,args);
-        }
-        return World::Player::Action::eat();
-    }
-
-    return World::Player::Action::moveTo(Point(data.agent_arguments[0],data.agent_arguments[1]));
+void MainWindow::deadPlayerCallback(const World::Player &player, void *data)
+{
+    MainWindow *main_window = static_cast<MainWindow*>(data);
+    main_window->statusBar()->showMessage(QString("%1 died RIP").arg(player.name.c_str()),message_delay);
+    main_window->updateReport();
 }
 
 MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(parent), world(width,height), nworld_tick(0), speed(1)
 {
     {
-        world.addPlayer("player1",qRgb(255,0,0),action_player2);
-        world.addPlayer("player2",qRgb(0,0,255),action_player1);
-        world.addPlayer("player3",qRgb(0,255,255),action_player2);
+        world.callbackData = static_cast<void*>(this);
+        world.deadPlayer = MainWindow::deadPlayerCallback;
+        world.addPlayer("player1",qRgb(255,0,0),mind_test2);
+        world.addPlayer("player2",qRgb(0,0,255),mind_test1);
+        world.addPlayer("player3",qRgb(0,255,255),mind_test2);
     }
 
     QWidget *central_widget = new QWidget(this);
@@ -84,7 +76,7 @@ MainWindow::MainWindow(int width, int height, QWidget *parent) : QMainWindow(par
         report_widget->setMinimumWidth(300);
     }
 
-    statusBar()->showMessage("welcome to cells!",1);
+    statusBar()->showMessage("welcome to cells!",message_delay);
     resize(900,600);
 }
 
@@ -104,7 +96,7 @@ void MainWindow::startTickWorldTimer(bool start)
     } else {
         world_tick_timer->stop();
         float elapsed = world_tick_time.elapsed()/1000.;
-        statusBar()->showMessage(QString("simulated %1 ticks in %2s %3ticks/s").arg(nworld_tick).arg(elapsed,0,'f',1).arg(nworld_tick/elapsed,0,'f',1));
+        statusBar()->showMessage(QString("simulated %1 ticks in %2s %3ticks/s").arg(nworld_tick).arg(elapsed,0,'f',1).arg(nworld_tick/elapsed,0,'f',1),message_delay);
     }
 }
 

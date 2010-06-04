@@ -12,6 +12,7 @@ class MainWindow : public QMainWindow
 Q_OBJECT
 public:
     MainWindow(int width, int height, QWidget *parent=NULL);
+    static void deadPlayerCallback(const World::Player &player, void *data);
 public slots:
     void tickWorld();
     void startTickWorldTimer(bool);
@@ -19,6 +20,7 @@ public slots:
     void updateReport();
 signals:
     void worldTicked();
+    void playerDied();
 protected:
     QTimer *world_tick_timer;
     QLabel *report_label;
