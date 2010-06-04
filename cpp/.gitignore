@@ -1,5 +1,1 @@
-moc_*.cpp
-cells
-Makefile
-*.o
-
+build
