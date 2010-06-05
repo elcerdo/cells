@@ -25,7 +25,8 @@ struct World
         typedef std::vector<int> Arguments;
 
         struct Data {
-            Data(const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, int world_width, int world_height);
+            Data(const std::string &player_name, const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, int world_width, int world_height);
+            const std::string player_name;
             const Point &agent_position;
             const Arguments &agent_arguments;
             const float agent_energy;
@@ -47,7 +48,7 @@ struct World
         private:
             Action();
         };
-        typedef Action Mind(Data &data);
+        typedef Action Mind(const Data &data);
 
         struct Agent
         {

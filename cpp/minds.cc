@@ -1,10 +1,10 @@
 #include "minds.h"
 
-World::Player::Action mind_test1(World::Player::Data &data) {
+World::Player::Action mind_test1(const World::Player::Data &data) {
     return World::Player::Action::moveTo(Point(10,10));
 }
 
-World::Player::Action mind_test2(World::Player::Data &data) {
+World::Player::Action mind_test2(const World::Player::Data &data) {
     if (data.agent_arguments.empty()) {
         if (data.agent_energy>70) {
             Point target = Point::random(data.world_width,data.world_height);

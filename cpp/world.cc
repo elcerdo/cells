@@ -7,7 +7,8 @@ World::Plant::Plant(const Point &position,float eff) : position(position), eff(e
 
 World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), loaded(false), arguments(arguments), player(player) {}
 
-World::Player::Data::Data(const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, int world_width, int world_height) :
+World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, int world_width, int world_height) :
+    player_name(player_name),
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     world_width(world_width), world_height(world_height) {}
 
@@ -186,7 +187,7 @@ void World::tick() {
             nagents += player->agents.size();
             for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::Agent *agent = *iagent;
-                Player::Data data(agent->position,agent->arguments,energies[agent],agent->loaded,width,height);
+                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,width,height);
                 actions.push_back(std::make_pair(agent,player->action(data)));
             }
         }
@@ -240,10 +241,11 @@ void World::tick() {
     for (AgentEnergies::iterator ipair=energies.begin(); ipair!= energies.end();) {
         AgentEnergies::iterator ipair_copy = ipair++;
         if (ipair_copy->second<0) {
-            occupied.get(ipair_copy->first->position) = false;
-            delete ipair_copy->first;
-            const_cast<Player*>(ipair_copy->first->player)->agents.erase(ipair_copy->first); //FIXME dirty hack
+            Player::Agent *agent = ipair_copy->first;
+            occupied.get(agent->position) = false;
+            const_cast<Player*>(agent->player)->agents.erase(agent); //FIXME dirty hack
             energies.erase(ipair_copy);
+            delete agent;
         }
     }
 
