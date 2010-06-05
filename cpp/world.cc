@@ -122,7 +122,7 @@ void World::print(std::ostream &os) const
     }
 }
 
-World::Player::Action::Action() : type(PASS) {}
+World::Player::Action::Action() : type(DONOTHING) {}
 
 World::Player::Action World::Player::Action::spawn(const Point &dest, const World::Player::Arguments &arguments)
 {
@@ -137,6 +137,14 @@ World::Player::Action World::Player::Action::moveTo(const Point &dest)
 {
     Action action;
     action.type = MOVE;
+    action.data = dest;
+    return action;
+}
+
+World::Player::Action World::Player::Action::attack(const Point &dest)
+{
+    Action action;
+    action.type = ATTACK;
     action.data = dest;
     return action;
 }
@@ -162,10 +170,10 @@ World::Player::Action World::Player::Action::drop()
     return action;
 }
 
-World::Player::Action World::Player::Action::pass()
+World::Player::Action World::Player::Action::doNothing()
 {
     Action action;
-    action.type = PASS;
+    action.type = DONOTHING;
     return action;
 }
 
@@ -173,6 +181,12 @@ bool World::isPositionValid(const Point &point) const
 {
     if (not occupied.isValid(point)) return false;
     return not occupied.get(point);
+}
+
+bool World::isAttackable(const Point &point) const
+{
+    if (not occupied.isValid(point)) return false;
+    return occupied.get(point);
 }
 
 void World::tick() {
@@ -211,6 +225,18 @@ void World::tick() {
                 agent->position = position_new;
                 occupied.get(agent->position) = true;
             }
+        } else if (action.type == Player::Action::ATTACK) {
+            Point position_new = agent->position.getNewPositionToDestination(action.data);
+            if (isAttackable(position_new) and position_new.x==action.data.x and position_new.y==action.data.y) {
+                AgentEnergies::const_iterator itarget = energies.begin();
+                while (itarget!=energies.end()) {
+                    if (itarget->first->position.x==position_new.x and itarget->first->position.y==position_new.y) { break; }
+                    itarget++;
+                }
+                assert(itarget != energies.end());
+                energy.get(itarget->first->position) += itarget->second+25;
+                energies[itarget->first] = 0;
+            }
         } else if (action.type == Player::Action::SPAWN) {
             Point position_new = agent->position.getNewPositionToDestination(action.data);
             if (isPositionValid(position_new)) {
@@ -231,7 +257,7 @@ void World::tick() {
                 agent->loaded = false;
                 altitude.get(agent->position)++;
             }
-        } else if (action.type == Player::Action::PASS) {
+        } else if (action.type == Player::Action::DONOTHING) {
         } else {
             std::cerr<<"unknow action "<<action.type<<std::endl;
         }
@@ -240,7 +266,7 @@ void World::tick() {
     // killing agents
     for (AgentEnergies::iterator ipair=energies.begin(); ipair!= energies.end();) {
         AgentEnergies::iterator ipair_copy = ipair++;
-        if (ipair_copy->second<0) {
+        if (ipair_copy->second<=0) {
             Player::Agent *agent = ipair_copy->first;
             occupied.get(agent->position) = false;
             const_cast<Player*>(agent->player)->agents.erase(agent); //FIXME dirty hack

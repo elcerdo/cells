@@ -35,13 +35,14 @@ struct World
         };
 
         struct Action {
-            static Action moveTo(const Point &dest);
-            static Action pass();
+            static Action doNothing();
             static Action spawn(const Point &dest, const Arguments &arguments);
+            static Action moveTo(const Point &dest);
             static Action eat();
+            static Action attack(const Point &dest);
             static Action lift();
             static Action drop(); 
-            enum Type {PASS, SPAWN, MOVE, EAT, ATTACK, LIFT, DROP};
+            enum Type {DONOTHING=0, SPAWN=1, MOVE=2, EAT=3, ATTACK=4, LIFT=5, DROP=6};
             Type type;
             Point data;
             Arguments arguments;
@@ -87,6 +88,7 @@ struct World
     bool isGameFinished() const;
 
     bool isPositionValid(const Point &point) const;
+    bool isAttackable(const Point &point) const;
     
     typedef void Callback(const Player &player, void *callbackData);
     Callback *deadPlayer;

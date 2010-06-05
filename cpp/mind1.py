@@ -1,3 +1,5 @@
+import actions
+
 prout = 0
 
 def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,world_width,world_height):
@@ -9,5 +11,7 @@ def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,wor
     print "world_size =",(world_width,world_height)
     prout += 1
     print "prout =",prout
-    return 45
+    ret = actions.doNothing()
+    print ret
+    return ret
 
