@@ -30,10 +30,12 @@ target_link_libraries(cellbenchmark_python
 # qt gui of simulator
 qt4_wrap_cpp(moc_srcs
     mainwindow.h
+    createworldwidget.h
     worldwidget.h)
 add_executable(qcells
     qcells.cc
     mainwindow.cc
+    createworldwidget.cc
     worldwidget.cc
     ${moc_srcs})
 target_link_libraries(qcells

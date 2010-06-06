@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
     PythonMinds::init();
 
-    World world(300,300);
+    World world(300,300,15);
     world.addPlayer("dummy",0,mind_test1);
     world.addPlayer("spawner",0,mind_test2);
     if (PythonMinds::loadPythonMind("player1","mind1")) { world.addPlayer("player1",0,PythonMinds::mind); } 

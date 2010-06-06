@@ -78,7 +78,7 @@ struct World
     typedef std::map<Player::Agent*,float> AgentEnergies;
 
 
-    World(int width=30, int height=30, int nplants=12);
+    World(int width, int height, int nplants);
     ~World();
 
     void tick();

@@ -9,14 +9,15 @@ class WorldWidget : public QWidget
 {
 Q_OBJECT
 public:
-    WorldWidget(const World &world, QWidget *parent = NULL);
+    WorldWidget(QWidget *parent = NULL);
     virtual void paintEvent(QPaintEvent *event);
 public slots:
+    void setWorld(const World *world);
     void imageNeedUpdate();
 protected:
     static const float altitude_max = 10.;
     static const float energy_max = 100.;
-    const World &world;
+    const World *world;
     bool image_need_update;
     QImage image_map;
     QImage image_energy;

@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
 
-    World world(300,300);
+    World world(300,300,15);
     world.addPlayer("player1",0,mind_test1);
     world.addPlayer("player2",0,mind_test2);
     world.addPlayer("player3",0,mind_test1);
