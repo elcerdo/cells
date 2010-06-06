@@ -45,6 +45,7 @@ static PythonMinds *instance = NULL;
 
 PythonMinds::PythonMinds()
 {
+    Py_Initialize();
     Py_AddToPythonPath("..");
     Py_AddToPythonPath("../minds");
 }
@@ -73,6 +74,7 @@ PythonMinds::~PythonMinds()
         Py_DECREF(i->second.function);
         Py_DECREF(i->second.module);
     }
+    PythonMinds::destroy();
 }
 
 bool PythonMinds::loadPythonMind(const std::string &player_name, const std::string &module_name)
@@ -181,28 +183,23 @@ World::Player::Action PythonMinds::act(const World::Player::Data &data)
         Py_DECREF(value);
     }
 
-    if    (return_args.size()>0 and return_args[0]==World::Player::Action::DONOTHING) {
+           if (return_args.size()>=1 and return_args[0]==World::Player::Action::DONOTHING) {
         return World::Player::Action::doNothing();
-    } else if (return_args.size()>3 and return_args[0]==World::Player::Action::SPAWN) {
+    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::SPAWN) {
         Point dest(return_args[1],return_args[2]);
-        World::Player::Arguments spawn_args;
-        std::copy(return_args.begin()+2,return_args.end(),spawn_args.begin());
+        World::Player::Arguments spawn_args(return_args.size()-3);
+        std::copy(return_args.begin()+3,return_args.end(),spawn_args.begin());
         return World::Player::Action::spawn(dest,spawn_args);
-    } else if (return_args.size()>3 and return_args[0]==World::Player::Action::MOVE) {
+    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::MOVE) {
         Point dest(return_args[1],return_args[2]);
         return World::Player::Action::moveTo(dest);
-    } else if (return_args.size()>1 and return_args[0]==World::Player::Action::EAT) {
+    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::EAT) {
         return World::Player::Action::eat();
-    } else if (return_args.size()>1 and return_args[0]==World::Player::Action::LIFT) {
+    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::LIFT) {
         return World::Player::Action::lift();
-    } else if (return_args.size()>1 and return_args[0]==World::Player::Action::DROP) {
+    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::DROP) {
         return World::Player::Action::drop();
     }
-
-
-
-
-    
 
     std::cerr<<"cant figure out action"<<endl;
     return defaultAction;
@@ -215,7 +212,6 @@ World::Player::Action PythonMinds::mind(const World::Player::Data &data)
 
 int main(int argc, char *argv[])
 {
-    Py_Initialize();
     PythonMinds::init();
 
     World world(300,300);
@@ -227,7 +223,6 @@ int main(int argc, char *argv[])
     for (int i=0; i<1000; i++) world.tick();
     world.print(std::cout);
 
-    PythonMinds::destroy();
     Py_Finalize();
     return 0;
 }
