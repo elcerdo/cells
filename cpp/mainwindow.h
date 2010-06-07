@@ -7,6 +7,7 @@
 #include <QTime>
 #include "world.h"
 #include "worldwidget.h"
+#include "mindsmodel.h"
 
 class MainWindow : public QMainWindow
 {
@@ -16,6 +17,7 @@ public:
     ~MainWindow();
     static void deadPlayerCallback(const World::Player &player, void *data);
 public slots:
+    void loadMind();
     void setWorld(World *world);
     void tickWorld();
     void startTickWorldTimer(bool);
@@ -28,6 +30,7 @@ protected:
     QTimer *world_tick_timer;
     QLabel *report_label;
     WorldWidget *world_widget;
+    MindsModel *minds_model;
     World *world;
     QTime world_tick_time;
     int nworld_tick;

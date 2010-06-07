@@ -44,13 +44,7 @@ CreateWorldWidget::CreateWorldWidget(QWidget *parent) : QWidget(parent) {
 
 void CreateWorldWidget::createWorld()
 {
-    qDebug("creating world");
-
     World *world = new World(world_width->value(),world_height->value(),world_plants->value());
-    world->addPlayer("player1",qRgb(255,0,0),mind_test2);
-    world->addPlayer("player2",qRgb(0,0,255),mind_test1);
-    world->addPlayer("player3",qRgb(0,255,255),mind_test2);
-
     emit worldCreated(world);
 }
 

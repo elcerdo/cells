@@ -31,6 +31,9 @@ World::Player::Action mind_test2(const World::Player::Data &data) {
 // PYTHON MINDS
 //********************************************************************************
 
+namespace PythonMinds
+{
+
 struct Mind
 {
     Mind() : module(NULL), function(NULL) {}
@@ -40,10 +43,11 @@ struct Mind
 
 typedef std::map<std::string,Mind> Minds;
 static Minds minds;
+static Names names;
 static bool minds_init = false;
 
 
-void PythonMinds::init()
+void init()
 {
     assert(minds_init==false);
     minds_init = true;
@@ -54,7 +58,7 @@ void PythonMinds::init()
     addPythonPath("../minds");
 }
 
-void PythonMinds::destroy()
+void destroy()
 {
     assert(minds_init);
     minds_init = false;
@@ -68,7 +72,12 @@ void PythonMinds::destroy()
     Py_Finalize();
 }
 
-void PythonMinds::addPythonPath(const std::string &path)
+const Names &getLoadedMindNames()
+{
+    return names;
+}
+
+void addPythonPath(const std::string &path)
 {
     PyObject *psys = PyImport_ImportModule("sys");
     PyObject *ppythonpath = PyObject_GetAttrString(psys,"path");
@@ -80,8 +89,7 @@ void PythonMinds::addPythonPath(const std::string &path)
     if (PyErr_Occurred()) PyErr_Print();
 }
 
-
-bool PythonMinds::loadPythonMind(const std::string &player_name, const std::string &module_name)
+bool loadMind(const std::string &player_name, const std::string &module_name)
 {
     if (minds.find(player_name)!=minds.end()) {
         std::cerr<<"duplicate player name"<<endl;
@@ -116,12 +124,14 @@ bool PythonMinds::loadPythonMind(const std::string &player_name, const std::stri
     Mind mind;
     mind.module   = pmodule;
     mind.function = pfunc;
-    minds[player_name]=mind;
+    minds[player_name] = mind;
+
+    names.push_back(std::make_pair(player_name,module_name));
 
     return true;
 }
 
-World::Player::Action PythonMinds::mind(const World::Player::Data &data)
+World::Player::Action mind(const World::Player::Data &data)
 {
     const World::Player::Action defaultAction = World::Player::Action::doNothing();
 
@@ -209,3 +219,4 @@ World::Player::Action PythonMinds::mind(const World::Player::Data &data)
     return defaultAction;
 }
 
+}

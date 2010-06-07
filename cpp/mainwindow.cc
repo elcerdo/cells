@@ -35,6 +35,8 @@ void MainWindow::setWorld(World *world_new) {
     world->deadPlayer = MainWindow::deadPlayerCallback;
     world_widget->setWorld(world);
 
+    minds_model->createPlayers(world);
+
     nworld_tick = 0;
     world_tick_time.restart();
 
@@ -74,6 +76,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), world(NULL), nwor
     }
 
     {
+        QDockWidget *dock = new QDockWidget("players",this);
+        addDockWidget(Qt::RightDockWidgetArea,dock);
+        QWidget *widget = new QWidget(dock);
+        dock->setWidget(widget);
+        QVBoxLayout *layout = new QVBoxLayout(widget);
+        widget->setLayout(layout);
+        view_menu->addAction(dock->toggleViewAction());
+
+        QListView *view = new QListView(dock);
+        layout->addWidget(view);
+        minds_model = new MindsModel(view);
+        view->setModel(minds_model);
+
+        QPushButton *load = new QPushButton("create player",this);
+        connect(load,SIGNAL(clicked()),SLOT(loadMind()));
+        layout->addWidget(load);
+
+        QDialog *dialog = new QDialog(this);
+
+        layout->addStretch();
+        widget->setMinimumWidth(300);
+    }
+
+    {
         QDockWidget *dock = new QDockWidget("create",this);
         addDockWidget(Qt::RightDockWidgetArea,dock);
         CreateWorldWidget *create_widget = new CreateWorldWidget(dock);
@@ -84,26 +110,45 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), world(NULL), nwor
 
     {
         QDockWidget *dock = new QDockWidget("report",this);
-        addDockWidget(Qt::RightDockWidgetArea,dock);
-        QWidget *report_widget = new QWidget(dock);
-        dock->setWidget(report_widget);
-        QVBoxLayout *report_layout = new QVBoxLayout(report_widget);
-        report_widget->setLayout(report_layout);
+        addDockWidget(Qt::LeftDockWidgetArea,dock);
+        QWidget *widget = new QWidget(dock);
+        dock->setWidget(widget);
+        QVBoxLayout *layout = new QVBoxLayout(widget);
+        widget->setLayout(layout);
         view_menu->addAction(dock->toggleViewAction());
 
-        QPushButton *report_update = new QPushButton("update report",report_widget);
-        connect(report_update,SIGNAL(clicked()),SLOT(updateReport()));
-        report_layout->addWidget(report_update);
+        QPushButton *update = new QPushButton("update report",widget);
+        connect(update,SIGNAL(clicked()),SLOT(updateReport()));
+        layout->addWidget(update);
 
-        report_label = new QLabel(report_widget);
-        report_layout->addWidget(report_label);
+        report_label = new QLabel(widget);
+        layout->addWidget(report_label);
         updateReport();
 
-        report_layout->addStretch();
-        report_widget->setMinimumWidth(300);
+        layout->addStretch();
+        widget->setMinimumWidth(300);
     }
 
     statusBar()->showMessage("welcome to cells!",message_delay);
+}
+
+void MainWindow::loadMind()
+{
+    bool ok;
+    
+    ok = false;
+    QString module_name = QInputDialog::getText(this,"load mind","enter python module name:",QLineEdit::Normal,"",&ok);
+    if (not ok or module_name.isEmpty()) return;
+
+    QRgb player_color = QColorDialog::getRgba(qRgb(255,0,0),&ok,this);
+    if (not ok) return;
+
+    QString player_name = QString("player%1").arg(PythonMinds::getLoadedMindNames().size()+1);
+
+    ok = minds_model->addPossiblePlayer(player_name,module_name,player_color);
+    if (not ok) return;
+
+    statusBar()->showMessage(QString("successfully loaded module %1").arg(module_name),message_delay);
 }
 
 void MainWindow::setSpeed(int new_speed)
@@ -142,6 +187,7 @@ void MainWindow::updateReport()
         report_label->setText("no world");
         return;
     }
+
     std::stringstream ss;
     world->print(ss);
     report_label->setText(QString::fromStdString(ss.str()));
