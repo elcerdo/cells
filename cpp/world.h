@@ -24,13 +24,24 @@ struct World
         typedef std::list<Message> Messages;
         typedef std::vector<int> Arguments;
 
+        struct ViewedAgent {
+            ViewedAgent(const std::string &player_name, const Point &position);
+            const Point &position;
+            const std::string &player_name;
+        };
+        struct ViewedAgentLess {
+            bool operator()(const ViewedAgent &a, const ViewedAgent &b) const;
+        };
+        typedef std::set<ViewedAgent,ViewedAgentLess> ViewedAgents;
+
         struct Data {
-            Data(const std::string &player_name, const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, int world_width, int world_height);
-            const std::string player_name;
+            Data(const std::string &player_name, const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, const ViewedAgents &agents_viewed, int world_width, int world_height);
+            const std::string &player_name;
             const Point &agent_position;
             const Arguments &agent_arguments;
             const float agent_energy;
             const float agent_loaded;
+            const ViewedAgents agents_viewed;
             const int world_width,world_height;
         };
 
@@ -87,7 +98,7 @@ struct World
     void spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player);
     bool isGameFinished() const;
 
-    bool isPositionValid(const Point &point) const;
+    bool isEmpty(const Point &point) const;
     bool isAttackable(const Point &point) const;
     
     typedef void Callback(const Player &player, void *callbackData);
@@ -98,7 +109,7 @@ struct World
     int nticks;
     Map<float> altitude;
     Map<float> energy;
-    Map<bool> occupied;
+    Map<Player::Agent*> occupied;
     Plants plants;
     Players players;
     AgentEnergies energies;

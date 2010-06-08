@@ -2,6 +2,7 @@
 
 #include <Python.h>
 #include <iostream>
+using std::cout;
 using std::endl;
 
 //********************************************************************************
@@ -14,6 +15,10 @@ World::Player::Action mind_test1(const World::Player::Data &data) {
 
 World::Player::Action mind_test2(const World::Player::Data &data) {
     if (data.agent_arguments.empty()) {
+        int nennemies = 0;
+        for (World::Player::ViewedAgents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) if (i->player_name!=data.player_name) nennemies++;
+        cout<<data.player_name<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies"<<endl;
+
         if (data.agent_energy>70) {
             Point target = Point::random(data.world_width,data.world_height);
             World::Player::Arguments args;
@@ -23,6 +28,7 @@ World::Player::Action mind_test2(const World::Player::Data &data) {
         }
         return World::Player::Action::eat();
     }
+
 
     return World::Player::Action::moveTo(Point(data.agent_arguments[0],data.agent_arguments[1]));
 }
@@ -56,6 +62,7 @@ void init()
 
     addPythonPath("..");
     addPythonPath("../minds");
+    addPythonPath("../../minds");
 }
 
 void destroy()

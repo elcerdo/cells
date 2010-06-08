@@ -33,9 +33,8 @@ void MainWindow::setWorld(World *world_new) {
     world = world_new;
     world->callbackData = static_cast<void*>(this);
     world->deadPlayer = MainWindow::deadPlayerCallback;
-    world_widget->setWorld(world);
-
     minds_model->createPlayers(world);
+    world_widget->setWorld(world);
 
     nworld_tick = 0;
     world_tick_time.restart();

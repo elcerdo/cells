@@ -7,10 +7,21 @@ World::Plant::Plant(const Point &position,float eff) : position(position), eff(e
 
 World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), loaded(false), arguments(arguments), player(player) {}
 
-World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, int world_width, int world_height) :
+World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, const World::Player::ViewedAgents &agents_viewed, int world_width, int world_height) :
     player_name(player_name),
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
+    agents_viewed(agents_viewed),
     world_width(world_width), world_height(world_height) {}
+
+World::Player::ViewedAgent::ViewedAgent(const std::string &player_name, const Point &position) : player_name(player_name), position(position) {}
+//World::Player::ViewedAgent::ViewedAgent() : player_name(""), position(Point()) { assert(false); }
+
+bool World::Player::ViewedAgentLess::operator()(const World::Player::ViewedAgent &a, const World::Player::ViewedAgent &b) const
+{
+    if (a.position.x != b.position.x) return a.position.x < b.position.x;
+    return a.position.y < b.position.y;
+}
+    
 
 World::Player::Player(const std::string &name, unsigned int color, Mind *action) : name(name), color(color), deathtick(-1), messages_inbox(new Messages), messages_outbox(new Messages), action(action) {}
 
@@ -40,7 +51,7 @@ World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackDat
 
     for (int i=0; i<energy.size; i++) { energy.flat[i] = random_uniform(0,10); }
 
-    for (int i=0; i<occupied.size; i++) { occupied.flat[i] = false; }
+    for (int i=0; i<occupied.size; i++) { occupied.flat[i] = NULL; }
 }
 
 World::~World()
@@ -61,7 +72,7 @@ bool World::isGameFinished() const
 void World::addPlayer(const std::string &name, unsigned int color, Player::Mind *action)
 {
     Point initial_position(-1,-1);
-    for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (occupied.get((*i)->position) == false) {
+    for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) if (isEmpty((*i)->position)) {
         initial_position = (*i)->position;
     }
 
@@ -73,9 +84,9 @@ void World::addPlayer(const std::string &name, unsigned int color, Player::Mind 
 void World::spawnAgent(const Point &position, const Player::Arguments &arguments, Player *player)
 {
     assert(players.find(player) != players.end());
-    assert(occupied.get(position) == false);
-    occupied.get(position) = true;
+    assert(isEmpty(position));
     Player::Agent *agent = new Player::Agent(position,arguments,player);
+    occupied.get(position) = agent;
     player->agents.insert(agent);
     energies[agent] = 25.;
 }
@@ -177,16 +188,16 @@ World::Player::Action World::Player::Action::doNothing()
     return action;
 }
 
-bool World::isPositionValid(const Point &point) const
+bool World::isEmpty(const Point &point) const
 {
     if (not occupied.isValid(point)) return false;
-    return not occupied.get(point);
+    return occupied.get(point) == NULL;
 }
 
 bool World::isAttackable(const Point &point) const
 {
     if (not occupied.isValid(point)) return false;
-    return occupied.get(point);
+    return occupied.get(point) != NULL;
 }
 
 void World::tick() {
@@ -199,9 +210,43 @@ void World::tick() {
         for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) {
             Player *player = *iplayer;
             nagents += player->agents.size();
+            
+            Player::ViewedAgents agents_viewed;
+            for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) { 
+                const Player::Agent *agent = *iagent;
+                assert(agent->player==player);
+                agents_viewed.insert(Player::ViewedAgent(player->name,agent->position));
+
+                {
+                    Point neightbor_position = agent->position.left();
+                    if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
+                        Player::Agent *neightbor = occupied.get(neightbor_position);
+                        agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
+                    }
+                } {
+                    Point neightbor_position = agent->position.right();
+                    if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
+                        Player::Agent *neightbor = occupied.get(neightbor_position);
+                        agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
+                    }
+                } {
+                    Point neightbor_position = agent->position.top();
+                    if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
+                        Player::Agent *neightbor = occupied.get(neightbor_position);
+                        agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
+                    }
+                } {
+                    Point neightbor_position = agent->position.down();
+                    if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
+                        Player::Agent *neightbor = occupied.get(neightbor_position);
+                        agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
+                    }
+                }
+            }
+
             for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::Agent *agent = *iagent;
-                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,width,height);
+                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,agents_viewed,width,height);
                 actions.push_back(std::make_pair(agent,player->action(data)));
             }
         }
@@ -217,13 +262,13 @@ void World::tick() {
         
         energies[agent]--;
 
-        //FIXME attack not implemented
         if (action.type == Player::Action::MOVE) {
             Point position_new = agent->position.getNewPositionToDestination(action.data);
-            if (isPositionValid(position_new) and abs(altitude.get(agent->position)-altitude.get(position_new))<4.) {
-                occupied.get(agent->position) = false;
+            if (isEmpty(position_new) and abs(altitude.get(agent->position)-altitude.get(position_new))<4.) {
+                assert(occupied.get(agent->position)==agent);
+                occupied.get(agent->position) = NULL;
                 agent->position = position_new;
-                occupied.get(agent->position) = true;
+                occupied.get(agent->position) = agent;
             }
         } else if (action.type == Player::Action::ATTACK) {
             Point position_new = agent->position.getNewPositionToDestination(action.data);
@@ -239,7 +284,7 @@ void World::tick() {
             }
         } else if (action.type == Player::Action::SPAWN) {
             Point position_new = agent->position.getNewPositionToDestination(action.data);
-            if (isPositionValid(position_new)) {
+            if (isEmpty(position_new)) {
                 energies[agent] -= 50;
                 spawnAgent(position_new,action.arguments,const_cast<Player*>(agent->player)); //FIXME dirty hack
             }
@@ -268,7 +313,8 @@ void World::tick() {
         AgentEnergies::iterator ipair_copy = ipair++;
         if (ipair_copy->second<=0) {
             Player::Agent *agent = ipair_copy->first;
-            occupied.get(agent->position) = false;
+            assert(occupied.get(agent->position)==agent);
+            occupied.get(agent->position) = NULL;
             const_cast<Player*>(agent->player)->agents.erase(agent); //FIXME dirty hack
             energies.erase(ipair_copy);
             delete agent;

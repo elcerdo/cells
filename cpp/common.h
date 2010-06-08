@@ -10,6 +10,10 @@ struct Point
 {
     Point(int x=0, int y=0);
     Point getNewPositionToDestination(const Point &dest) const;
+    Point left() const;
+    Point right() const;
+    Point down() const;
+    Point top() const;
     static Point random(int width, int height);
     int x,y;
 };

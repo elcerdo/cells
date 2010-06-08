@@ -23,3 +23,8 @@ Point Point::getNewPositionToDestination(const Point &dest) const
 {
     return Point(x+signum(dest.x-x),y+signum(dest.y-y));
 }
+
+Point Point::left() const { return Point(x-1,y); }
+Point Point::right() const { return Point(x+1,y); }
+Point Point::down() const { return Point(x,y-1); }
+Point Point::top() const { return Point(x,y+1); }

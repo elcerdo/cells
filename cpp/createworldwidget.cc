@@ -12,12 +12,12 @@ CreateWorldWidget::CreateWorldWidget(QWidget *parent) : QWidget(parent) {
         layout->addWidget(label);
 
         world_width = new QSpinBox(this);
-        world_width->setRange(50,500);
+        world_width->setRange(20,1000);
         world_width->setValue(300);
         layout->addWidget(world_width);
 
         world_height = new QSpinBox(this);
-        world_height->setRange(50,500);
+        world_height->setRange(20,1000);
         world_height->setValue(300);
         layout->addWidget(world_height);
     }
@@ -27,7 +27,7 @@ CreateWorldWidget::CreateWorldWidget(QWidget *parent) : QWidget(parent) {
         layout->addWidget(label);
         
         world_plants = new QSpinBox(this);
-        world_plants->setRange(5,50);
+        world_plants->setRange(5,300);
         world_plants->setValue(12);
         layout->addWidget(world_plants);
     }
