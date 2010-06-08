@@ -1,3 +1,7 @@
 *~
 *.pyc
-default.cfg
+*.cfg
+.*.swp
+*.c
+*.so
+build
