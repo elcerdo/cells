@@ -176,16 +176,23 @@ World::Player::Action mind(const World::Player::Data &data)
             PyList_Append(plants_viewed,plant_viewed);
             Py_DECREF(plant_viewed);
         }
-        call_args = Py_BuildValue("(s,(i,i),O,f,i,O,O,i,i)",
+        PyObject *energy_map = PyList_New(0);
+        for (int k=0; k<data.energy_map.size; k++) {
+            PyObject *dot = Py_BuildValue("f",data.energy_map.flat[k]);
+            PyList_Append(energy_map,dot);
+            Py_DECREF(dot);
+        }
+        call_args = Py_BuildValue("(s,(i,i),O,f,i,O,O,O,i,i)",
             data.player_name.c_str(),
             data.agent_position.x,data.agent_position.y,
             agent_args,
             data.agent_energy,data.agent_loaded ? 1:0,
-            agents_viewed, plants_viewed,
+            agents_viewed, plants_viewed, energy_map,
             data.world_width,data.world_height);
         Py_DECREF(agent_args);
         Py_DECREF(agents_viewed);
         Py_DECREF(plants_viewed);
+        Py_DECREF(energy_map);
     }
 
     World::Player::Arguments return_args;
@@ -209,12 +216,15 @@ World::Player::Action mind(const World::Player::Data &data)
 
         for (int i=0; i<PyList_Size(value); i++) {
             PyObject *pitem = PyList_GetItem(value,i);
-            int item = PyInt_AsLong(pitem);
+            int item = 0;
+            if (PyFloat_Check(pitem)) item = PyFloat_AsDouble(pitem);
+            else item = PyInt_AsLong(pitem);
 
             if (PyErr_Occurred()) {
+                PyObject_Print(value,stdout,0);
                 Py_DECREF(value);
                 PyErr_Print();
-                std::cerr<<"return list item is not a int"<<endl;
+                std::cerr<<"return list item is not numeric"<<endl;
                 return defaultAction;
             }
 

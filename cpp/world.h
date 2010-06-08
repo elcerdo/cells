@@ -35,10 +35,11 @@ struct World
         typedef std::set<ViewedAgent,ViewedAgentLess> ViewedAgents;
 
         struct Data {
-            Data(const std::string &player_name, const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, const ViewedAgents &agents_viewed, const Plants &plants_viewed, int world_width, int world_height);
+            Data(const std::string &player_name, const Point &agent_position, const Arguments &arguments, float agent_energy, bool agent_loaded, const ViewedAgents &agents_viewed, const Plants &plants_viewed, const Map<float> &energy_map, int world_width, int world_height);
             const std::string &player_name;
             const Point &agent_position;
             const Arguments &agent_arguments;
+            const Map<float> &energy_map;
             const float agent_energy;
             const float agent_loaded;
             const ViewedAgents agents_viewed;

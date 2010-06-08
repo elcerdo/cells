@@ -6,7 +6,7 @@ def neighbor(p0,p1):
     dy = p0[1]-p1[1]
     return abs(dx)+abs(dy)
 
-def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,agents_viewed,plants_viewed,world_width,world_height):
+def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,agents_viewed,plants_viewed,energy_map,world_width,world_height):
     ennemies = [agent[1] for agent in agents_viewed if agent[0]!=player_name and neighbor(agent_position,agent[1])<2]
     if ennemies:
         return actions.attack(*ennemies[0])

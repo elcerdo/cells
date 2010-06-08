@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
         } 
     }
 
-    benchmark(world);
+    benchmark(world,100);
 
     PythonMinds::destroy();
 

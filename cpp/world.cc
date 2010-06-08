@@ -7,11 +7,12 @@ World::Plant::Plant(const Point &position,float eff) : position(position), eff(e
 
 World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), loaded(false), arguments(arguments), player(player) {}
 
-World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, const World::Player::ViewedAgents &agents_viewed, const World::Plants &plants_viewed, int world_width, int world_height) :
+World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, const World::Player::ViewedAgents &agents_viewed, const World::Plants &plants_viewed, const Map<float> &energy_map, int world_width, int world_height) :
     player_name(player_name),
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     agents_viewed(agents_viewed),
     plants_viewed(plants_viewed),
+    energy_map(energy_map),
     world_width(world_width), world_height(world_height) {}
 
 World::Player::ViewedAgent::ViewedAgent(const std::string &player_name, const Point &position) : player_name(player_name), position(position) {}
@@ -275,7 +276,7 @@ void World::tick() {
 
             for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::Agent *agent = *iagent;
-                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,agents_viewed,plants_viewed,width,height);
+                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,agents_viewed,plants_viewed,energy,width,height);
                 actions.push_back(std::make_pair(agent,player->action(data)));
             }
         }
