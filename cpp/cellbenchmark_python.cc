@@ -1,15 +1,23 @@
 #include "minds.h"
 #include "benchmark.h"
+#include <sstream>
+
+using std::cout;
+using std::endl;
 
 int main(int argc, char *argv[])
 {
     PythonMinds::init();
 
     World world(300,300,15);
-    world.addPlayer("dummy",0,mind_test1);
-    world.addPlayer("spawner",0,mind_test2);
-    if (PythonMinds::loadMind("player1","mind1")) { world.addPlayer("player1",0,PythonMinds::mind); } 
-    if (PythonMinds::loadMind("player2","mind2")) { world.addPlayer("player2",0,PythonMinds::mind); } 
+    for (int k=1; k<argc; k++) {
+        std::stringstream ss;
+        ss<<"player"<<k;
+        if (PythonMinds::loadMind(ss.str(),argv[k])) {
+            cout<<"loaded "<<argv[k]<<" for "<<ss.str()<<endl;
+            world.addPlayer(ss.str(),0,PythonMinds::mind);
+        } 
+    }
 
     benchmark(world);
 
