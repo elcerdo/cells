@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 World::Plant::Plant(const Point &position,float eff) : position(position), eff(eff) {}
 

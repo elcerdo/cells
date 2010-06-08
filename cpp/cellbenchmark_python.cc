@@ -1,6 +1,7 @@
 #include "minds.h"
 #include "benchmark.h"
 #include <sstream>
+#include <iostream>
 
 using std::cout;
 using std::endl;
