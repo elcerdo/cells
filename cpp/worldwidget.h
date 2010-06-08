@@ -22,6 +22,7 @@ protected:
     QImage image_map;
     QImage image_energy;
     QImage image_overlay;
+    QImage image_occupied;
 };
 
 #endif

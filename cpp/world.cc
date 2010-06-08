@@ -7,10 +7,11 @@ World::Plant::Plant(const Point &position,float eff) : position(position), eff(e
 
 World::Player::Agent::Agent(const Point &position, const Arguments &arguments, const World::Player *player) : position(position), loaded(false), arguments(arguments), player(player) {}
 
-World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, const World::Player::ViewedAgents &agents_viewed, int world_width, int world_height) :
+World::Player::Data::Data(const std::string &player_name, const Point &agent_position, const Arguments &agent_arguments, float agent_energy, bool agent_loaded, const World::Player::ViewedAgents &agents_viewed, const World::Plants &plants_viewed, int world_width, int world_height) :
     player_name(player_name),
     agent_position(agent_position), agent_arguments(agent_arguments), agent_energy(agent_energy), agent_loaded(agent_loaded),
     agents_viewed(agents_viewed),
+    plants_viewed(plants_viewed),
     world_width(world_width), world_height(world_height) {}
 
 World::Player::ViewedAgent::ViewedAgent(const std::string &player_name, const Point &position) : player_name(player_name), position(position) {}
@@ -45,7 +46,9 @@ World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackDat
     }
 
     for (int i=0; i<nplants; i++) {
-        Plant *plant = new Plant(Point::random(width,height),random_uniform(5,11));
+        Point pt;
+        do { pt = Point::random(width,height); } while(getPlant(pt)!=NULL);
+        Plant *plant = new Plant(pt,random_uniform(5,11));
         plants.insert(plant);
     }
 
@@ -200,6 +203,15 @@ bool World::isAttackable(const Point &point) const
     return occupied.get(point) != NULL;
 }
 
+World::Plant *World::getPlant(const Point &point) const
+{
+    for (Plants::const_iterator iplant=plants.begin(); iplant!=plants.end(); iplant++) {
+        if ((*iplant)->position.x==point.x and (*iplant)->position.y==point.y) { return *iplant; }
+    }
+    return NULL;
+}
+
+
 void World::tick() {
     typedef std::vector< std::pair<Player::Agent*,Player::Action> > Actions;
 
@@ -212,10 +224,15 @@ void World::tick() {
             nagents += player->agents.size();
             
             Player::ViewedAgents agents_viewed;
+            Plants plants_viewed;
             for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) { 
                 const Player::Agent *agent = *iagent;
                 assert(agent->player==player);
                 agents_viewed.insert(Player::ViewedAgent(player->name,agent->position));
+
+                if (Plant *plant=getPlant(agent->position)) {
+                    plants_viewed.insert(plant);
+                }
 
                 {
                     Point neightbor_position = agent->position.left();
@@ -223,11 +240,17 @@ void World::tick() {
                         Player::Agent *neightbor = occupied.get(neightbor_position);
                         agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
                     }
+                    if (Plant *plant=getPlant(neightbor_position)) {
+                        plants_viewed.insert(plant);
+                    }
                 } {
                     Point neightbor_position = agent->position.right();
                     if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
                         Player::Agent *neightbor = occupied.get(neightbor_position);
                         agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
+                    }
+                    if (Plant *plant=getPlant(neightbor_position)) {
+                        plants_viewed.insert(plant);
                     }
                 } {
                     Point neightbor_position = agent->position.top();
@@ -235,18 +258,24 @@ void World::tick() {
                         Player::Agent *neightbor = occupied.get(neightbor_position);
                         agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
                     }
+                    if (Plant *plant=getPlant(neightbor_position)) {
+                        plants_viewed.insert(plant);
+                    }
                 } {
                     Point neightbor_position = agent->position.down();
                     if (isAttackable(neightbor_position) and occupied.get(neightbor_position)->player!=player) {
                         Player::Agent *neightbor = occupied.get(neightbor_position);
                         agents_viewed.insert(Player::ViewedAgent(neightbor->player->name,neightbor->position));
                     }
+                    if (Plant *plant=getPlant(neightbor_position)) {
+                        plants_viewed.insert(plant);
+                    }
                 }
             }
 
             for (Player::Agents::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::Agent *agent = *iagent;
-                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,agents_viewed,width,height);
+                Player::Data data(player->name,agent->position,agent->arguments,energies[agent],agent->loaded,agents_viewed,plants_viewed,width,height);
                 actions.push_back(std::make_pair(agent,player->action(data)));
             }
         }

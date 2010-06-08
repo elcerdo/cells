@@ -17,7 +17,7 @@ World::Player::Action mind_test2(const World::Player::Data &data) {
     if (data.agent_arguments.empty()) {
         int nennemies = 0;
         for (World::Player::ViewedAgents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) if (i->player_name!=data.player_name) nennemies++;
-        cout<<data.player_name<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies"<<endl;
+        cout<<data.player_name<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies "<<data.plants_viewed.size()<<" plants"<<endl;
 
         if (data.agent_energy>70) {
             Point target = Point::random(data.world_width,data.world_height);
@@ -168,15 +168,24 @@ World::Player::Action mind(const World::Player::Data &data)
             PyList_Append(agents_viewed,agent_viewed);
             Py_DECREF(agent_viewed);
         }
-        call_args = Py_BuildValue("(s,(i,i),O,f,i,O,i,i)",
+        PyObject *plants_viewed = PyList_New(0);
+        for (World::Plants::const_iterator i=data.plants_viewed.begin(); i!=data.plants_viewed.end(); i++) {
+            PyObject *plant_viewed = Py_BuildValue("((i,i),f)",
+                (*i)->position.x,(*i)->position.y,
+                (*i)->eff);
+            PyList_Append(plants_viewed,plant_viewed);
+            Py_DECREF(plant_viewed);
+        }
+        call_args = Py_BuildValue("(s,(i,i),O,f,i,O,O,i,i)",
             data.player_name.c_str(),
             data.agent_position.x,data.agent_position.y,
             agent_args,
             data.agent_energy,data.agent_loaded ? 1:0,
-            agents_viewed,
+            agents_viewed, plants_viewed,
             data.world_width,data.world_height);
         Py_DECREF(agent_args);
         Py_DECREF(agents_viewed);
+        Py_DECREF(plants_viewed);
     }
 
     World::Player::Arguments return_args;

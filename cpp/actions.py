@@ -3,8 +3,11 @@ __all__=["doNothing","spawn","moveTo","eat","attack","lift","drop"]
 def doNothing():
     return [0]
 
-def spawn(x,y,args):
-    return [1,x,y]+list(args)
+def spawn(x,y,args=None):
+    if args:
+        return [1,x,y]+list(args)
+    else:
+        return [1,x,y]
 
 def moveTo(x,y):
     return [2,x,y]

@@ -22,9 +22,10 @@ void WorldWidget::setWorld(const World *world_new)
     world = world_new;
 
     if (world) {
-        image_map     = QImage(QSize(world->width,world->height),QImage::Format_RGB32);
-        image_energy  = QImage(QSize(world->width,world->height),QImage::Format_ARGB32);
-        image_overlay = QImage(QSize(world->width,world->height),QImage::Format_ARGB32);
+        image_map      = QImage(QSize(world->width,world->height),QImage::Format_RGB32);
+        image_energy   = QImage(QSize(world->width,world->height),QImage::Format_ARGB32);
+        image_occupied = QImage(QSize(world->width,world->height),QImage::Format_ARGB32);
+        image_overlay  = QImage(QSize(world->width,world->height),QImage::Format_ARGB32);
     }
 
     imageNeedUpdate();
@@ -43,9 +44,14 @@ void WorldWidget::paintEvent(QPaintEvent *event)
         }
 
         for (int x=0; x<world->width; x++) for (int y=0; y<world->height; y++) {
+            float normalized = (world->occupied.get(x,y)!=NULL);
+            uint color = qRgba(255,0,255,255*normalized);
+            image_occupied.setPixel(x,y,color);
+        }
+
+        for (int x=0; x<world->width; x++) for (int y=0; y<world->height; y++) {
             float energy = world->energy.get(x,y);
             float normalized = normalize(energy,energy_max);
-            //normalized = world->occupied.get(x,y); //FIXME debug occupied
             uint color = qRgba(0,127,255,255*normalized);
             image_energy.setPixel(x,y,color);
         }
@@ -77,6 +83,7 @@ void WorldWidget::paintEvent(QPaintEvent *event)
     painter.translate(-world->width/2.,-world->height/2.);
     painter.drawImage(QPoint(),image_map);
     painter.drawImage(QPoint(),image_energy);
+    painter.drawImage(QPoint(),image_occupied);
     painter.drawImage(QPoint(),image_overlay);
 
 }

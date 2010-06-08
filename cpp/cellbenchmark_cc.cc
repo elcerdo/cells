@@ -3,8 +3,9 @@
 
 int main(int argc, char *argv[])
 {
+    srand(time(NULL));
 
-    World world(30,30,15);
+    World world(50,50,15);
     world.addPlayer("player1",0,mind_test1);
     world.addPlayer("player2",0,mind_test2);
     world.addPlayer("player3",0,mind_test1);

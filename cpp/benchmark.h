@@ -3,6 +3,6 @@
 
 #include "world.h"
 
-void benchmark(World &world, int niters=2000);
+void benchmark(World &world, int niters=20000);
 
 #endif
