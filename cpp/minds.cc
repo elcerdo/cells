@@ -160,13 +160,23 @@ World::Player::Action mind(const World::Player::Data &data)
             PyList_Append(agent_args,agent_arg);
             Py_DECREF(agent_arg);
         }
-        call_args = Py_BuildValue("(s,(i,i),O,f,i,i,i)",
+        PyObject *agents_viewed = PyList_New(0);
+        for (World::Player::ViewedAgents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) {
+            PyObject *agent_viewed = Py_BuildValue("(s,(i,i))",
+                i->player_name.c_str(),
+                i->position.x,i->position.y);
+            PyList_Append(agents_viewed,agent_viewed);
+            Py_DECREF(agent_viewed);
+        }
+        call_args = Py_BuildValue("(s,(i,i),O,f,i,O,i,i)",
             data.player_name.c_str(),
             data.agent_position.x,data.agent_position.y,
             agent_args,
             data.agent_energy,data.agent_loaded ? 1:0,
+            agents_viewed,
             data.world_width,data.world_height);
         Py_DECREF(agent_args);
+        Py_DECREF(agents_viewed);
     }
 
     World::Player::Arguments return_args;
@@ -214,6 +224,9 @@ World::Player::Action mind(const World::Player::Data &data)
     } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::MOVE) {
         Point dest(return_args[1],return_args[2]);
         return World::Player::Action::moveTo(dest);
+    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::ATTACK) {
+        Point dest(return_args[1],return_args[2]);
+        return World::Player::Action::attack(dest);
     } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::EAT) {
         return World::Player::Action::eat();
     } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::LIFT) {

@@ -1,4 +1,4 @@
-__all__=["doNothing","spawn","moveTo","eat"]
+__all__=["doNothing","spawn","moveTo","eat","attack","lift","drop"]
 
 def doNothing():
     return [0]
@@ -12,3 +12,11 @@ def moveTo(x,y):
 def eat():
     return [3]
 
+def attack(x,y):
+    return [4,x,y]
+
+def lift():
+    return [5]
+
+def drop():
+    return [6]
