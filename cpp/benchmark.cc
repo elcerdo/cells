@@ -25,11 +25,11 @@ void benchmark(World &world, int niters)
     if (elapsed<1.) {
         cout<<world.nticks<<" ticks in "<<std::fixed<<1e3*elapsed<<"ms"<<endl;
         cout<<std::fixed<<1e-3*world.nticks/elapsed<<" ticks/ms"<<endl;
-        cout<<std::fixed<<static_cast<float>(nagents_total)/world.nticks<<" agents/ticks"<<endl;
     } else {
         cout<<world.nticks<<" ticks in "<<std::fixed<<elapsed<<"s"<<endl;
         cout<<std::fixed<<world.nticks/elapsed<<" ticks/s"<<endl;
-        cout<<std::fixed<<static_cast<float>(nagents_total)/world.nticks<<" agents/ticks"<<endl;
     }
+    cout<<std::fixed<<static_cast<float>(nagents_total)/world.nticks<<" agents/ticks"<<endl;
+    cout<<std::fixed<<1e-3*static_cast<float>(nagents_total)/elapsed<<" kagent/s"<<endl;
 }
 

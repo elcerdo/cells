@@ -23,5 +23,6 @@ namespace Python
 
 Action mind_test1(const AgentMe &data); // debug mind: print args, do nothing
 Action mind_test2(const AgentMe &data); // spawer mind: spawn agent from plant when it as enough energy
+Action mind_test3(const AgentMe &data); // same as mind2 but doesnt print anything
 
 #endif

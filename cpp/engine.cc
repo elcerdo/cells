@@ -247,7 +247,7 @@ void World::tick() {
             Point position = plant->position;
             position.x += dx;
             position.y += dy;
-            if (energy_map.isValid(position)) energy_map.get(position) += plant->eff;
+            energy_map.get(position) += plant->eff;
         }
     }
 
