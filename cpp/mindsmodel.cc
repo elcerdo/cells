@@ -2,17 +2,16 @@
 
 #include <QColor>
 
-MindsModel::MindsModel(QObject *parent) : QAbstractListModel(parent), names(PythonMinds::getLoadedMindNames()) {}
+MindsModel::MindsModel(QObject *parent) : QAbstractListModel(parent) {}
 
-int MindsModel::rowCount(const QModelIndex &) const
-{ 
-    return names.size();
+int MindsModel::rowCount(const QModelIndex &) const { 
+    return Python::getMindCount();
 }
 
 void MindsModel::updateData()
 {
     QModelIndex tl = createIndex(0,0);
-    QModelIndex br = createIndex(names.size()-1,0);
+    QModelIndex br = createIndex(Python::getMindCount()-1,0);
     emit dataChanged(tl,br);
 }
 
@@ -25,7 +24,7 @@ Qt::ItemFlags MindsModel::flags(const QModelIndex &index) const
 QVariant MindsModel::data(const QModelIndex &index, int role) const
 {
     if (role==Qt::DisplayRole) {
-        const std::pair<std::string,std::string> &iter = names[index.row()];
+        const Python::MindName &iter = Python::getMindName(index.row());
         QString prout = QString("%1 as %2").arg(iter.first.c_str()).arg(iter.second.c_str());
         return QVariant(prout);
     }
@@ -46,7 +45,7 @@ QVariant MindsModel::data(const QModelIndex &index, int role) const
 
 bool MindsModel::addPossiblePlayer(const QString &player_name,const QString &module_name,QRgb player_color)
 {
-    if (PythonMinds::loadMind(player_name.toStdString(),module_name.toStdString())) {
+    if (Python::loadMind(player_name.toStdString(),module_name.toStdString())) {
         colors.push_back(player_color);
         updateData();
         return true;
@@ -59,10 +58,9 @@ void MindsModel::createPlayers(World *world) const
     //qDebug("creating players");
 
     for (Enabled::const_iterator i=enabled.begin(); i!=enabled.end(); i++) {
-        const std::string &player_name = names[*i].first;
-        const std::string &module_name = names[*i].second;
+        const Python::MindName &names = Python::getMindName(*i);
         //qDebug("\t%s as %s",player_name.c_str(),module_name.c_str());
-        world->addPlayer(player_name,colors[*i],PythonMinds::mind);
+        world->addPlayer(names.first,colors[*i],Python::mind);
     }
 }
 

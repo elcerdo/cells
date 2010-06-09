@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <cstdlib>
+
 int signum(int x)
 {
     if (x == 0) return 0;

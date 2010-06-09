@@ -37,35 +37,35 @@ void WorldWidget::paintEvent(QPaintEvent *event)
 
     if (image_need_update) {
         for (int x=0; x<world->width; x++) for (int y=0; y<world->height; y++) {
-            float altitude = world->altitude.get(x,y);
+            float altitude = world->altitude_map.get(x,y);
             float normalized = normalize(altitude,altitude_max);
             uint color = qRgb(255*normalized,127*normalized,63*normalized);
             image_map.setPixel(x,y,color);
         }
 
         for (int x=0; x<world->width; x++) for (int y=0; y<world->height; y++) {
-            float normalized = (world->occupied.get(x,y)!=NULL);
+            float normalized = (world->agents_map.get(x,y)!=NULL);
             uint color = qRgba(255,0,255,255*normalized);
             image_occupied.setPixel(x,y,color);
         }
 
         for (int x=0; x<world->width; x++) for (int y=0; y<world->height; y++) {
-            float energy = world->energy.get(x,y);
+            float energy = world->energy_map.get(x,y);
             float normalized = normalize(energy,energy_max);
             uint color = qRgba(0,127,255,255*normalized);
             image_energy.setPixel(x,y,color);
         }
 
         image_overlay.fill(qRgba(0,0,0,0));
-        for (World::Plants::const_iterator i=world->plants.begin(); i!=world->plants.end(); i++) {
-            const World::Plant *plant = *i;
+        for (PlantInternals::const_iterator i=world->plants.begin(); i!=world->plants.end(); i++) {
+            const PlantInternal *plant = *i;
             image_overlay.setPixel(plant->position.x,plant->position.y,qRgb(0,255,0));
         }
 
-        for (World::Players::const_iterator i=world->players.begin(); i!=world->players.end(); i++) {
-            const World::Player *player = *i;
-            for (World::Player::Agents::const_iterator j=player->agents.begin(); j!=player->agents.end(); j++) {
-                const World::Player::Agent *agent = *j;
+        for (Players::const_iterator i=world->players.begin(); i!=world->players.end(); i++) {
+            const Player *player = *i;
+            for (Player::AgentInternals::const_iterator j=player->agents.begin(); j!=player->agents.end(); j++) {
+                const Player::AgentInternal *agent = *j;
                 image_overlay.setPixel(agent->position.x,agent->position.y,player->color);
             }
         }

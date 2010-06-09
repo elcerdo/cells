@@ -2,7 +2,7 @@
 #define __CREATEWORLDWIDGET_H__
 
 #include <QSpinBox>
-#include "world.h"
+#include "engine.h"
 
 class CreateWorldWidget : public QWidget
 {

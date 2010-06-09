@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QPainter>
-#include "world.h"
+#include "engine.h"
 
 class WorldWidget : public QWidget
 {

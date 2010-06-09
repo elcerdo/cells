@@ -4,6 +4,7 @@
 #include <QAbstractItemModel>
 #include <QRgb>
 #include "minds.h"
+#include "engine.h"
 
 class MindsModel : public QAbstractListModel
 {
@@ -23,7 +24,6 @@ protected:
     typedef std::vector<QRgb> Colors;
     Enabled enabled;
     Colors colors;
-    const PythonMinds::Names &names;
 };
 
 #endif

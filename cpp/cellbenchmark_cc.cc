@@ -1,8 +1,8 @@
 #include "minds.h"
 #include "benchmark.h"
+#include <cstdlib>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     srand(time(NULL));
 
     World world(50,50,15);

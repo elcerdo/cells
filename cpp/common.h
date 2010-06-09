@@ -1,13 +1,11 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <cstdlib> // for NULL and rand()
 #include <cassert>
 
 float random_uniform(float min=0, float max=1);
 
-struct Point
-{
+struct Point {
     Point(int x=0, int y=0);
     Point getNewPositionToDestination(const Point &dest) const;
     Point left() const;
@@ -19,9 +17,8 @@ struct Point
 };
 
 template <typename T>
-struct Map
-{
-    Map(int width, int height) : width(width), height(height), size(width*height), flat(NULL) {
+struct Map {
+    Map(int width, int height) : width(width), height(height), size(width*height) {
         flat = new T[size];
     }
     ~Map() {
@@ -50,6 +47,15 @@ struct Map
 
     const int width,height,size;
     T *flat;
+};
+typedef Map<float> MapFloat;
+
+template <typename T>
+struct PositionLess {
+    bool operator()(const T &a, const T &b) {
+        if (a.position.x != b.position.x) return a.position.x < b.position.x;
+        else a.position.y < b.position.y;
+    }
 };
 
 #endif

@@ -10,7 +10,8 @@ include(${QT_USE_FILE})
 # simualtion library
 add_library(cellsworld
     common.cc
-    world.cc
+    interface.cc
+    engine.cc
     minds.cc)
 target_link_libraries(cellsworld
     ${PYTHON_LIBRARIES})

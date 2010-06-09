@@ -1,22 +1,27 @@
 #ifndef __MINDS_H__
 #define __MINDS_H__
 
-#include "world.h"
+#include "interface.h"
 
-namespace PythonMinds
+namespace Python
 {
-    typedef std::vector< std::pair<std::string,std::string> > Names;
+    typedef std::pair<std::string,std::string> MindName;
+    typedef std::vector<MindName> MindNames;
 
     void init();
     void destroy();
 
+    Action mind(const AgentMe &data);
+
     bool loadMind(const std::string &player_name, const std::string &module_name);
     void addPythonPath(const std::string &path);
-    World::Player::Action mind(const World::Player::Data &data);
-    const Names &getLoadedMindNames();
+
+    MindName getMindName(int index);
+    MindNames getMindNames();
+    int getMindCount();
 };
 
-World::Player::Action mind_test1(const World::Player::Data &data); // debug mind: print args, do nothing
-World::Player::Action mind_test2(const World::Player::Data &data); // spawer mind: spawn agent from plant when it as enough energy
+Action mind_test1(const AgentMe &data); // debug mind: print args, do nothing
+Action mind_test2(const AgentMe &data); // spawer mind: spawn agent from plant when it as enough energy
 
 #endif

@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    PythonMinds::init();
+    Python::init();
 
     srand(time(NULL));
     QApplication app(argc,argv);
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     int ret = app.exec();
 
-    PythonMinds::destroy();
+    Python::destroy();
 
     return ret;
 }

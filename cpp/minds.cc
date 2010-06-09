@@ -1,6 +1,7 @@
 #include "minds.h"
 
 #include <Python.h>
+#include <map>
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -9,52 +10,47 @@ using std::endl;
 // CPP MINDS
 //********************************************************************************
 
-World::Player::Action mind_test1(const World::Player::Data &data) {
-    return World::Player::Action::moveTo(Point(10,10));
+Action mind_test1(const AgentMe &data) {
+    return Action::moveTo(Point(10,10));
 }
 
-World::Player::Action mind_test2(const World::Player::Data &data) {
-    if (data.agent_arguments.empty()) {
+Action mind_test2(const AgentMe &data) {
+    if (data.arguments.empty()) {
         int nennemies = 0;
-        for (World::Player::ViewedAgents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) if (i->player_name!=data.player_name) nennemies++;
-        cout<<data.player_name<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies "<<data.plants_viewed.size()<<" plants"<<endl;
+        for (Agents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) if (i->player!=data.player) nennemies++;
+        cout<<data.player<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies "<<data.plants_viewed.size()<<" plants"<<endl;
 
-        if (data.agent_energy>70) {
-            Point target = Point::random(data.world_width,data.world_height);
-            World::Player::Arguments args;
+        if (data.energy>70) {
+            Point target = Point::random(data.energy_map.width,data.energy_map.height);
+            Arguments args;
             args.push_back(target.x);
             args.push_back(target.y);
-            return World::Player::Action::spawn(target,args);
+            return Action::spawn(target,args);
         }
-        return World::Player::Action::eat();
+        return Action::eat();
     }
 
-
-    return World::Player::Action::moveTo(Point(data.agent_arguments[0],data.agent_arguments[1]));
+    return Action::moveTo(Point(data.arguments[0],data.arguments[1]));
 }
 
 //********************************************************************************
 // PYTHON MINDS
 //********************************************************************************
 
-namespace PythonMinds
+namespace Python
 {
 
-struct Mind
-{
-    Mind() : module(NULL), function(NULL) {}
+struct MindModule {
+    std::string module_name;
     PyObject *module;
     PyObject *function;
 };
+typedef std::map<std::string,MindModule> MindModules;
 
-typedef std::map<std::string,Mind> Minds;
-static Minds minds;
-static Names names;
+static MindModules mind_modules;
 static bool minds_init = false;
 
-
-void init()
-{
+void init() {
     assert(minds_init==false);
     minds_init = true;
 
@@ -65,40 +61,56 @@ void init()
     addPythonPath("../../minds");
 }
 
-void destroy()
-{
+void destroy() {
     assert(minds_init);
     minds_init = false;
 
-    for (Minds::const_iterator i=minds.begin(); i!=minds.end(); i++) {
-        Py_DECREF(i->second.function);
+    for (MindModules::const_iterator i=mind_modules.begin(); i!=mind_modules.end(); i++) {
         Py_DECREF(i->second.module);
+        Py_DECREF(i->second.function);
     }
-    minds.clear();
 
     Py_Finalize();
 }
 
-const Names &getLoadedMindNames()
-{
+int getMindCount() {
+    return mind_modules.size();
+}
+
+MindName getMindName(int index) {
+    assert(index>=0);
+
+    for (MindModules::const_iterator i=mind_modules.begin(); i!=mind_modules.end(); i++) {
+        if (index==0) { return std::make_pair(i->first,i->second.module_name); }
+        index--;
+    }
+
+    return std::make_pair("invalid player","invalid module");
+}
+
+
+
+MindNames getMindNames() {
+    MindNames names;
+    for (MindModules::const_iterator i=mind_modules.begin(); i!=mind_modules.end(); i++) {
+        names.push_back(std::make_pair(i->first,i->second.module_name));
+    }
     return names;
 }
 
-void addPythonPath(const std::string &path)
-{
+void addPythonPath(const std::string &path) {
     PyObject *psys = PyImport_ImportModule("sys");
     PyObject *ppythonpath = PyObject_GetAttrString(psys,"path");
-    Py_DECREF(psys);
     PyObject *ppath = PyString_FromString(path.c_str());
     PyList_Append(ppythonpath,ppath);
     Py_DECREF(ppath);
     Py_DECREF(ppythonpath);
+    Py_DECREF(psys);
     if (PyErr_Occurred()) PyErr_Print();
 }
 
-bool loadMind(const std::string &player_name, const std::string &module_name)
-{
-    if (minds.find(player_name)!=minds.end()) {
+bool loadMind(const std::string &player_name, const std::string &module_name) {
+    if (mind_modules.find(player_name)!=mind_modules.end()) {
         std::cerr<<"duplicate player name"<<endl;
         return false;
     }
@@ -128,25 +140,23 @@ bool loadMind(const std::string &player_name, const std::string &module_name)
         return false;
     }
 
-    Mind mind;
+    MindModule mind;
     mind.module   = pmodule;
     mind.function = pfunc;
-    minds[player_name] = mind;
-
-    names.push_back(std::make_pair(player_name,module_name));
+    mind.module_name = module_name;
+    mind_modules[player_name] = mind;
 
     return true;
 }
 
-World::Player::Action mind(const World::Player::Data &data)
-{
-    const World::Player::Action defaultAction = World::Player::Action::doNothing();
+Action mind(const AgentMe &data) {
+    const Action defaultAction = Action::doNothing();
 
     PyObject *function = NULL;
     { // check if a mind is loaded for corresponding player
-        Minds::const_iterator imind = minds.find(data.player_name);
-        if (imind==minds.end()) {
-            std::cerr<<"cant find python mind for player "<<data.player_name<<endl;
+        MindModules::const_iterator imind = mind_modules.find(data.player);
+        if (imind==mind_modules.end()) {
+            std::cerr<<"cant find python mind for player "<<data.player<<endl;
             return defaultAction;
         }
         function = imind->second.function;
@@ -155,24 +165,24 @@ World::Player::Action mind(const World::Player::Data &data)
     PyObject *call_args = NULL;
     { // build callargs
         PyObject *agent_args = PyList_New(0);
-        for (World::Player::Arguments::const_iterator i=data.agent_arguments.begin(); i!=data.agent_arguments.end(); i++) {
+        for (Arguments::const_iterator i=data.arguments.begin(); i!=data.arguments.end(); i++) {
             PyObject *agent_arg = Py_BuildValue("i",*i);
             PyList_Append(agent_args,agent_arg);
             Py_DECREF(agent_arg);
         }
         PyObject *agents_viewed = PyList_New(0);
-        for (World::Player::ViewedAgents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) {
+        for (Agents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) {
             PyObject *agent_viewed = Py_BuildValue("(s,(i,i))",
-                i->player_name.c_str(),
+                i->player.c_str(),
                 i->position.x,i->position.y);
             PyList_Append(agents_viewed,agent_viewed);
             Py_DECREF(agent_viewed);
         }
         PyObject *plants_viewed = PyList_New(0);
-        for (World::Plants::const_iterator i=data.plants_viewed.begin(); i!=data.plants_viewed.end(); i++) {
+        for (Plants::const_iterator i=data.plants_viewed.begin(); i!=data.plants_viewed.end(); i++) {
             PyObject *plant_viewed = Py_BuildValue("((i,i),f)",
-                (*i)->position.x,(*i)->position.y,
-                (*i)->eff);
+                i->position.x,i->position.y,
+                i->eff);
             PyList_Append(plants_viewed,plant_viewed);
             Py_DECREF(plant_viewed);
         }
@@ -183,19 +193,19 @@ World::Player::Action mind(const World::Player::Data &data)
             Py_DECREF(dot);
         }
         call_args = Py_BuildValue("(s,(i,i),O,f,i,O,O,O,i,i)",
-            data.player_name.c_str(),
-            data.agent_position.x,data.agent_position.y,
+            data.player.c_str(),
+            data.position.x,data.position.y,
             agent_args,
-            data.agent_energy,data.agent_loaded ? 1:0,
+            data.energy,data.loaded ? 1:0,
             agents_viewed, plants_viewed, energy_map,
-            data.world_width,data.world_height);
+            data.energy_map.width,data.energy_map.height);
         Py_DECREF(agent_args);
         Py_DECREF(agents_viewed);
         Py_DECREF(plants_viewed);
         Py_DECREF(energy_map);
     }
 
-    World::Player::Arguments return_args;
+    Arguments return_args;
     { // call the function and parse result
         assert(function and call_args);
         PyObject *value = PyObject_CallObject(function,call_args);
@@ -233,25 +243,25 @@ World::Player::Action mind(const World::Player::Data &data)
         Py_DECREF(value);
     }
 
-           if (return_args.size()>=1 and return_args[0]==World::Player::Action::DONOTHING) {
-        return World::Player::Action::doNothing();
-    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::SPAWN) {
+           if (return_args.size()>=1 and return_args[0]==Action::DONOTHING) {
+        return Action::doNothing();
+    } else if (return_args.size()>=3 and return_args[0]==Action::SPAWN) {
         Point dest(return_args[1],return_args[2]);
-        World::Player::Arguments spawn_args(return_args.size()-3);
+        Arguments spawn_args(return_args.size()-3);
         std::copy(return_args.begin()+3,return_args.end(),spawn_args.begin());
-        return World::Player::Action::spawn(dest,spawn_args);
-    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::MOVE) {
+        return Action::spawn(dest,spawn_args);
+    } else if (return_args.size()>=3 and return_args[0]==Action::MOVE) {
         Point dest(return_args[1],return_args[2]);
-        return World::Player::Action::moveTo(dest);
-    } else if (return_args.size()>=3 and return_args[0]==World::Player::Action::ATTACK) {
+        return Action::moveTo(dest);
+    } else if (return_args.size()>=3 and return_args[0]==Action::ATTACK) {
         Point dest(return_args[1],return_args[2]);
-        return World::Player::Action::attack(dest);
-    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::EAT) {
-        return World::Player::Action::eat();
-    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::LIFT) {
-        return World::Player::Action::lift();
-    } else if (return_args.size()>=1 and return_args[0]==World::Player::Action::DROP) {
-        return World::Player::Action::drop();
+        return Action::attack(dest);
+    } else if (return_args.size()>=1 and return_args[0]==Action::EAT) {
+        return Action::eat();
+    } else if (return_args.size()>=1 and return_args[0]==Action::LIFT) {
+        return Action::lift();
+    } else if (return_args.size()>=1 and return_args[0]==Action::DROP) {
+        return Action::drop();
     }
 
     std::cerr<<"cant figure out action"<<endl;

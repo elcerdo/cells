@@ -6,7 +6,7 @@
 
 static const int message_delay = 4000;
 
-void MainWindow::deadPlayerCallback(const World::Player &player, void *data)
+void MainWindow::deadPlayerCallback(const Player &player, void *data)
 {
     MainWindow *main_window = static_cast<MainWindow*>(data);
     main_window->statusBar()->showMessage(QString("%1 died RIP").arg(player.name.c_str()),message_delay);
@@ -142,7 +142,7 @@ void MainWindow::loadMind()
     QRgb player_color = QColorDialog::getRgba(qRgb(255,0,0),&ok,this);
     if (not ok) return;
 
-    QString player_name = QString("player%1").arg(PythonMinds::getLoadedMindNames().size()+1);
+    QString player_name = QString("player%1").arg(Python::getMindCount()+1);
 
     ok = minds_model->addPossiblePlayer(player_name,module_name,player_color);
     if (not ok) return;

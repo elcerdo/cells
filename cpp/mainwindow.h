@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QTime>
-#include "world.h"
+#include "engine.h"
 #include "worldwidget.h"
 #include "mindsmodel.h"
 
@@ -15,7 +15,7 @@ Q_OBJECT
 public:
     MainWindow(QWidget *parent=NULL);
     ~MainWindow();
-    static void deadPlayerCallback(const World::Player &player, void *data);
+    static void deadPlayerCallback(const Player &player, void *data);
 public slots:
     void loadMind();
     void setWorld(World *world);
