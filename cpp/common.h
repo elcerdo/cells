@@ -54,7 +54,7 @@ template <typename T>
 struct PositionLess {
     bool operator()(const T &a, const T &b) {
         if (a.position.x != b.position.x) return a.position.x < b.position.x;
-        else a.position.y < b.position.y;
+        else return a.position.y < b.position.y;
     }
 };
 

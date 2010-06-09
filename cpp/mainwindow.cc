@@ -92,8 +92,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), world(NULL), nwor
         connect(load,SIGNAL(clicked()),SLOT(loadMind()));
         layout->addWidget(load);
 
-        QDialog *dialog = new QDialog(this);
-
         layout->addStretch();
         widget->setMinimumWidth(300);
     }

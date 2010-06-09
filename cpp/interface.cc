@@ -2,14 +2,15 @@
 
 Plant::Plant(const Point &position, float eff) : position(position), eff(eff) {}
 
-Agent::Agent(const std::string &player, const Point &position) : player(player), position(position) {}
+Agent::Agent(const std::string &player, const Point &position) : position(position), player(player) {}
 
 AgentMe::AgentMe(const std::string &player, const Point &position, const Arguments &arguments, float energy, bool loaded, const Agents &agents_viewed, const Plants &plants_viewed, const Map<float> &energy_map) :
     Agent(player,position),
-    arguments(arguments), energy(energy), loaded(loaded),
+    arguments(arguments),
+    energy_map(energy_map),
+    energy(energy), loaded(loaded),
     agents_viewed(agents_viewed),
-    plants_viewed(plants_viewed),
-    energy_map(energy_map) {}
+    plants_viewed(plants_viewed) {}
 
 Action::Action(Type type, const Point &data, const Arguments &arguments) : type(type), data(data), arguments(arguments) {}
 
