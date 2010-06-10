@@ -15,6 +15,7 @@ def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,age
     print ccells.__doc__
     prout += 1
     print "prout =",prout
+    print "messages =",ccells.getMessages()
     ret = ccells.doNothing()
     ret = ccells.spawn(10,10,[23,42])
     ret = ccells.moveTo(10,14)
@@ -23,5 +24,6 @@ def act(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,age
     ret = ccells.lift()
     ret = ccells.drop()
     print ret
+    ccells.sendMessage("hello from prout = %d" % prout)
     return ret
 

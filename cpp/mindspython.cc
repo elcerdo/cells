@@ -64,14 +64,40 @@ static PyObject *ccell_drop(PyObject *self, PyObject *args) {
     return Py_BuildValue("[i]",Action::DROP);
 }
 
+static const Messages *inbox = NULL;
+static PyObject *ccell_getMessages(PyObject *self, PyObject *args) {
+    if (not inbox) return NULL;
+
+    PyObject *list = PyList_New(0);
+    for (Messages::const_iterator i=inbox->begin(); i!=inbox->end(); i++) {
+        PyObject *item = Py_BuildValue("s",i->c_str());
+        PyList_Append(list,item);
+        Py_DECREF(item);
+    }
+    return list;
+}
+
+static Messages *outbox = NULL;
+static PyObject *ccell_sendMessage(PyObject *self, PyObject *args) {
+    if (not outbox) return NULL;
+
+    const char *message;
+    if (not PyArg_ParseTuple(args,"s",&message)) return NULL;
+
+    outbox->push_back(std::string(message));
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ccell_methods[] = {
-    {"doNothing",ccell_doNothing,METH_NOARGS ,"build a do nothing action"},
-    {"spawn"    ,ccell_spawn    ,METH_VARARGS,"build a do spawn action"},
-    {"moveTo"   ,ccell_moveTo   ,METH_VARARGS,"build a do move action"},
-    {"eat"      ,ccell_eat      ,METH_NOARGS ,"build a do eat action"},
-    {"attack"   ,ccell_moveTo   ,METH_VARARGS,"build a do attack action"},
-    {"lift"     ,ccell_lift     ,METH_NOARGS ,"build a do lift action"},
-    {"drop"     ,ccell_drop     ,METH_NOARGS ,"build a do drop action"},
+    {"doNothing"  , ccell_doNothing  , METH_NOARGS , "build a do nothing action"},
+    {"spawn"      , ccell_spawn      , METH_VARARGS, "build a do spawn action"},
+    {"moveTo"     , ccell_moveTo     , METH_VARARGS, "build a do move action"},
+    {"eat"        , ccell_eat        , METH_NOARGS , "build a do eat action"},
+    {"attack"     , ccell_attack     , METH_VARARGS, "build a do attack action"},
+    {"lift"       , ccell_lift       , METH_NOARGS , "build a do lift action"},
+    {"drop"       , ccell_drop       , METH_NOARGS , "build a do drop action"},
+    {"getMessages", ccell_getMessages, METH_NOARGS , "get messages from inbox"},
+    {"sendMessage", ccell_sendMessage, METH_VARARGS, "get messages from inbox"},
     {NULL,NULL,0,NULL}
 };
 
@@ -216,6 +242,11 @@ Action MindPython::act(const AgentMe &me) const {
             agents_viewed_python, plants_viewed_python, energy_map_python,
             me.energy_map.width,me.energy_map.height);
         Py_DECREF(agent_args);
+    }
+
+    { // set message boxes
+        inbox = &me.inbox;
+        outbox = &me.outbox;
     }
 
     Arguments return_args;

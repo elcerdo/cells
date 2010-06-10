@@ -1,5 +1,8 @@
 __all__=["WrappedMe","WrapperAgent","WrapperPlant","WrappedMap","WrappedView","wrapper"]
 
+from cPickle import dumps,loads
+import ccells
+
 class WrappedMe:
     def __init__(self,team,position,args,energy,loaded,view):
         self.position = position
@@ -21,6 +24,8 @@ class WrapperAgent:
     def __init__(self,team,position):
         self.team = team
         self.position = position
+        self.x = self.position[0]
+        self.y = self.position[1]
     def get_pos(self):
         return self.position
     def get_team(self):
@@ -29,6 +34,8 @@ class WrapperAgent:
 class WrapperPlant:
     def __init__(self,position,eff):
         self.position = position
+        self.x = self.position[0]
+        self.y = self.position[1]
         self.eff = eff
     def get_pos(self):
         return self.position
@@ -58,6 +65,15 @@ class WrapperView:
     def get_energy(self):
         return self.energy_map
 
+class WrapperMessage:
+    def __init__(self):
+        string_messages = ccells.getMessages()
+        self.messages = [loads(message) for message in string_messages]
+    def get_messages(self):
+        return self.messages
+    def send_message(self,message):
+        ccells.sendMessage(dumps(message))
+
 def wrapper(wrapped_module_name,class_init_arg=None):
     wrapped_module = __import__(wrapped_module_name)
     instances = {}
@@ -70,7 +86,8 @@ def wrapper(wrapped_module_name,class_init_arg=None):
             instances[player_name] = instance
         finally:
             view = WrapperView(player_name,agent_position,agent_arguments,agent_energy,agent_loaded,agents_viewed,plants_viewed,energy_map,world_width,world_height)
-            action = instance.act(view,None)
+            msg  = WrapperMessage()
+            action = instance.act(view,msg)
             return action
 
     return act
