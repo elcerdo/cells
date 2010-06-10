@@ -3,26 +3,20 @@
 
 #include "interface.h"
 
-namespace Python
-{
-    typedef std::pair<std::string,std::string> MindName;
-    typedef std::vector<MindName> MindNames;
-
-    void init();
-    void destroy();
-
-    Action mind(const AgentMe &data);
-
-    bool loadMind(const std::string &player_name, const std::string &module_name);
-    void addPythonPath(const std::string &path);
-
-    MindName getMindName(int index);
-    MindNames getMindNames();
-    int getMindCount();
+// debug mind: print args, do nothing
+struct MindTest1 : public Mind {
+    virtual Action act(const AgentMe &me) const;
+    virtual void initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const;
 };
 
-Action mind_test1(const AgentMe &data); // debug mind: print args, do nothing
-Action mind_test2(const AgentMe &data); // spawer mind: spawn agent from plant when it as enough energy
-Action mind_test3(const AgentMe &data); // same as mind2 but doesnt print anything
+// spawer mind: spawn agent from plant when it as enough energy
+struct MindTest2 : public Mind {
+    virtual Action act(const AgentMe &me) const;
+};
+
+// same as mind2 but doesnt print anything
+struct MindTest3 : public Mind {
+    virtual Action act(const AgentMe &me) const;
+};
 
 #endif

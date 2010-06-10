@@ -25,7 +25,7 @@ typedef std::set<Agent, PositionLess<Agent> > Agents;
 struct AgentMe : public Agent {
     AgentMe(const std::string &player, const Point &position, const Arguments &arguments, float energy, bool loaded, const Agents &agents_viewed, const Plants &plants_viewed, const Map<float> &energy_map);
     const Arguments &arguments;
-    const Map<float> &energy_map;
+    const MapFloat &energy_map;
     const float energy;
     const bool loaded;
     const Agents &agents_viewed;
@@ -48,8 +48,10 @@ private:
     Action(Type type, const Point &data=Point(), const Arguments &arguments=Arguments());
 };
 
-typedef Action Mind(const AgentMe &me);
-
+struct Mind {
+    virtual Action act(const AgentMe &me) const = 0;
+    virtual void initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const;
+};
 
 #endif
 

@@ -1,6 +1,6 @@
 #include <QApplication>
 #include "mainwindow.h"
-#include "minds.h"
+#include "mindspython.h"
 
 int main(int argc, char *argv[])
 {

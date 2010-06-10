@@ -1,6 +1,7 @@
 #include "mindsmodel.h"
 
 #include <QColor>
+#include "mindspython.h"
 
 MindsModel::MindsModel(QObject *parent) : QAbstractListModel(parent) {}
 
@@ -55,12 +56,9 @@ bool MindsModel::addPossiblePlayer(const QString &player_name,const QString &mod
 
 void MindsModel::createPlayers(World *world) const
 {
-    //qDebug("creating players");
-
     for (Enabled::const_iterator i=enabled.begin(); i!=enabled.end(); i++) {
-        const Python::MindName &names = Python::getMindName(*i);
-        //qDebug("\t%s as %s",player_name.c_str(),module_name.c_str());
-        world->addPlayer(names.first,colors[*i],Python::mind);
+        const Python::MindName &name = Python::getMindName(*i);
+        world->addPlayer(name.first,colors[*i],new Python::MindPython(name.first));
     }
 }
 

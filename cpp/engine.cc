@@ -9,6 +9,10 @@ PlantInternal::PlantInternal(const Point &position, float eff) : position(positi
 
 Player::Player(const std::string &name, unsigned int color, Mind *mind) : name(name), color(color), deathtick(-1), mind(mind) {}
 
+Player::~Player() {
+    if (mind) delete mind;
+}
+
 World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackData(NULL), width(width), height(height), nticks(0), altitude_map(width,height), energy_map(width,height), agents_map(width,height), plants_map(width,height) {
     // init altitude map
     MapFloat altitude_tmp(width+2,height+2);
@@ -29,7 +33,7 @@ World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackDat
     for (int i=0; i<plants_map.size; i++) { plants_map.flat[i] = NULL; }
     for (int i=0; i<nplants; i++) {
         Point pt;
-        do { pt = Point::random(width,height); } while(getPlant(pt)!=NULL);
+        do { pt = Point::random(width,height); } while(plants_map.isValid(pt) and plants_map.get(pt)!=NULL);
         PlantInternal *plant = new PlantInternal(pt,random_uniform(5,11));
         plants.insert(plant);
         plants_map.get(pt) = plant;
@@ -142,6 +146,10 @@ void World::tick() {
         unsigned int nagents = 0;
         for (Players::const_iterator iplayer=players.begin(); iplayer!=players.end(); iplayer++) {
             Player *player = *iplayer;
+
+            // if player has no agent skip
+            if (player->agents.empty()) continue;
+
             nagents += player->agents.size();
             
             // build views
@@ -158,11 +166,14 @@ void World::tick() {
                 checkPosition(agent->position.down(),agents_viewed,plants_viewed);
             }
 
+            assert(player->mind);
+            // init mind data
+            player->mind->initData(agents_viewed,plants_viewed,energy_map);
             // query mind
             for (Player::AgentInternals::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::AgentInternal *agent = *iagent;
                 AgentMe view(player->name,agent->position,agent->arguments,agent->energy,agent->loaded,agents_viewed,plants_viewed,energy_map);
-                actions.push_back(std::make_pair(agent,player->mind(view)));
+                actions.push_back(std::make_pair(agent,player->mind->act(view)));
             }
         }
         assert(actions.size() == nagents);

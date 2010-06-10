@@ -3,6 +3,7 @@
 #include <QtGui>
 #include <sstream>
 #include "createworldwidget.h"
+#include "mindspython.h"
 
 static const int message_delay = 4000;
 

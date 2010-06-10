@@ -3,7 +3,6 @@
 
 #include <QAbstractItemModel>
 #include <QRgb>
-#include "minds.h"
 #include "engine.h"
 
 class MindsModel : public QAbstractListModel

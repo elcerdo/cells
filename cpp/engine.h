@@ -17,6 +17,7 @@ struct Player {
     typedef Map<AgentInternal*> AgentInternalsMap;
 
     Player(const std::string &name, unsigned int color, Mind *mind);
+    ~Player();
 
     void print(std::ostream &os) const;
 
@@ -42,7 +43,7 @@ struct World {
 
     void tick();
     void print(std::ostream &os) const;
-    void addPlayer(const std::string &name, unsigned int color, Mind *action); 
+    void addPlayer(const std::string &name, unsigned int color, Mind *mind); 
     void spawnAgent(Player *player, const Point &position, const Arguments &arguments=Arguments());
     bool isGameFinished() const;
 

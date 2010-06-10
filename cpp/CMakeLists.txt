@@ -12,6 +12,7 @@ add_library(cellsworld
     common.cc
     interface.cc
     engine.cc
+    mindspython.cc
     minds.cc)
 target_link_libraries(cellsworld
     ${PYTHON_LIBRARIES})

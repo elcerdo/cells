@@ -1,4 +1,4 @@
-#include "minds.h"
+#include "mindspython.h"
 #include "benchmark.h"
 #include <sstream>
 #include <iostream>
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
         ss<<"player"<<k;
         if (Python::loadMind(ss.str(),argv[k])) {
             cout<<"loaded "<<argv[k]<<" for "<<ss.str()<<endl;
-            world.addPlayer(ss.str(),0,Python::mind);
+            world.addPlayer(ss.str(),0,new Python::MindPython(ss.str()));
         } 
     }
 
