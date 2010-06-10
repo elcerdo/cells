@@ -8,9 +8,15 @@ Player::AgentInternal::AgentInternal(Player *player, const Point &position, cons
 
 PlantInternal::PlantInternal(const Point &position, float eff) : position(position), eff(eff) {}
 
-Player::Player(const std::string &name, unsigned int color, Mind *mind) : name(name), color(color), deathtick(-1), mind(mind) {}
+Player::Player(const std::string &name, unsigned int color, Mind *mind) : name(name), color(color), deathtick(-1), mind(mind) {
+    // init messages lists
+    inbox = new Messages();
+    outbox = new Messages();
+}
 
 Player::~Player() {
+    delete inbox;
+    delete outbox;
     if (mind) delete mind;
 }
 
@@ -51,6 +57,12 @@ World::~World() {
 }
 
 //-----------------------------------------------------------------
+
+void Player::swapMessages() {
+    delete inbox;
+    inbox = outbox;
+    outbox = new Messages();
+}
 
 bool World::isGameFinished() const {
     size_t total_agents = agents.size();
@@ -173,11 +185,14 @@ void World::tick() {
             // rebuild python viewed data
             Python::buildViewedData(agents_viewed,plants_viewed);
 
+            // swap messages box
+            player->swapMessages();
+
             // query mind
             assert(player->mind);
             for (Player::AgentInternals::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::AgentInternal *agent = *iagent;
-                AgentMe view(player->name,agent->position,agent->arguments,agent->energy,agent->loaded,agents_viewed,plants_viewed,energy_map);
+                AgentMe view(player->name,agent->position,agent->arguments,agent->energy,agent->loaded,agents_viewed,plants_viewed,energy_map,*player->inbox,*player->outbox);
                 actions.push_back(std::make_pair(agent,player->mind->act(view)));
             }
         }

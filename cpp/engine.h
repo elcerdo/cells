@@ -21,12 +21,16 @@ struct Player {
     ~Player();
 
     void print(std::ostream &os=std::cout) const;
+    void swapMessages();
 
     const std::string name;
     const unsigned int color;
     int deathtick;
     Mind *mind;
     AgentInternals agents;
+
+    Messages *inbox;
+    Messages *outbox;
 };
 typedef std::set<Player*> Players;
 

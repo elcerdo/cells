@@ -14,7 +14,9 @@ Action MindTest2::act(const AgentMe &data) const {
     if (data.arguments.empty()) {
         int nennemies = 0;
         for (Agents::const_iterator i=data.agents_viewed.begin(); i!=data.agents_viewed.end(); i++) if (i->player!=data.player) nennemies++;
-        cout<<data.player<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies "<<data.plants_viewed.size()<<" plants"<<endl;
+        cout<<data.player<<" views "<<data.agents_viewed.size()<<"/"<<nennemies<<" agents/enemies "<<data.plants_viewed.size()<<" plants ";
+        cout<<data.inbox.size()<<"/"<<data.outbox.size()<<" in/outbox messages"<<endl;
+        data.outbox.push_back("hello world!!!");
 
         if (data.energy>70) {
             Point target = Point::random(data.energy_map.width,data.energy_map.height);

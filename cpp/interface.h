@@ -4,7 +4,11 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <list>
 #include "common.h"
+
+typedef std::string Message;
+typedef std::list<Message> Messages;
 
 typedef std::vector<int> Arguments;
 
@@ -23,13 +27,15 @@ struct Agent {
 typedef std::set<Agent, PositionLess<Agent> > Agents;
 
 struct AgentMe : public Agent {
-    AgentMe(const std::string &player, const Point &position, const Arguments &arguments, float energy, bool loaded, const Agents &agents_viewed, const Plants &plants_viewed, const Map<float> &energy_map);
+    AgentMe(const std::string &player, const Point &position, const Arguments &arguments, float energy, bool loaded, const Agents &agents_viewed, const Plants &plants_viewed, const Map<float> &energy_map, const Messages &inbox, Messages &outbox);
     const Arguments &arguments;
     const MapFloat &energy_map;
     const float energy;
     const bool loaded;
     const Agents &agents_viewed;
     const Plants &plants_viewed;
+    const Messages &inbox;
+    Messages &outbox;
 };
 
 struct Action {
