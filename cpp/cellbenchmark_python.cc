@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
         } 
     }
 
-    benchmark(world,100);
+    benchmark(world,200);
 
     Python::destroy();
 

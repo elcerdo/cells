@@ -18,6 +18,63 @@ typedef std::map<std::string,MindModule> MindModules;
 static MindModules mind_modules;
 static bool minds_init = false;
 
+static PyObject *agents_viewed_python = NULL;
+static PyObject *plants_viewed_python = NULL;
+static PyObject *energy_map_python    = NULL;
+
+static PyObject *ccell_doNothing(PyObject *self, PyObject *args) {
+    return Py_BuildValue("[i]",Action::DONOTHING);
+}
+
+static PyObject *ccell_spawn(PyObject *self, PyObject *args) {
+    int x,y;
+    PyObject *spawn_args;
+    if (not PyArg_ParseTuple(args,"ii|O",&x,&y,&spawn_args)) return NULL;
+    if (spawn_args and not PyList_Check(spawn_args)) return NULL;
+    PyObject *list = Py_BuildValue("[iii]",Action::SPAWN,x,y);
+    if (spawn_args) {
+        for (int i=0; i<PyList_Size(spawn_args); i++) {
+            PyList_Append(list,PyList_GetItem(spawn_args,i));
+        }
+    }
+    return list;
+}
+
+static PyObject *ccell_moveTo(PyObject *self, PyObject *args) {
+    int x,y;
+    if (not PyArg_ParseTuple(args,"ii",&x,&y)) return NULL;
+    return Py_BuildValue("[iii]",Action::MOVE,x,y);
+}
+
+static PyObject *ccell_eat(PyObject *self, PyObject *args) {
+    return Py_BuildValue("[i]",Action::EAT);
+}
+
+static PyObject *ccell_attack(PyObject *self, PyObject *args) {
+    int x,y;
+    if (not PyArg_ParseTuple(args,"ii",&x,&y)) return NULL;
+    return Py_BuildValue("[iii]",Action::ATTACK,x,y);
+}
+
+static PyObject *ccell_lift(PyObject *self, PyObject *args) {
+    return Py_BuildValue("[i]",Action::LIFT);
+}
+
+static PyObject *ccell_drop(PyObject *self, PyObject *args) {
+    return Py_BuildValue("[i]",Action::DROP);
+}
+
+static PyMethodDef ccell_methods[] = {
+    {"doNothing",ccell_doNothing,METH_NOARGS ,"build a do nothing action"},
+    {"spawn"    ,ccell_spawn    ,METH_VARARGS,"build a do spawn action"},
+    {"moveTo"   ,ccell_moveTo   ,METH_VARARGS,"build a do move action"},
+    {"eat"      ,ccell_eat      ,METH_NOARGS ,"build a do eat action"},
+    {"attack"   ,ccell_moveTo   ,METH_VARARGS,"build a do attack action"},
+    {"lift"     ,ccell_lift     ,METH_NOARGS ,"build a do lift action"},
+    {"drop"     ,ccell_drop     ,METH_NOARGS ,"build a do drop action"},
+    {NULL,NULL,0,NULL}
+};
+
 void init() {
     assert(not minds_init);
     minds_init = true;
@@ -27,6 +84,9 @@ void init() {
     addPythonPath("..");
     addPythonPath("../minds");
     addPythonPath("../../minds");
+
+    Py_InitModule3("ccells",ccell_methods,"cell engine bindings");
+    if (PyErr_Occurred()) PyErr_Print();
 }
 
 void destroy() {
@@ -37,6 +97,10 @@ void destroy() {
         Py_DECREF(i->second.module);
         Py_DECREF(i->second.function);
     }
+
+    Py_XDECREF(agents_viewed_python);
+    Py_XDECREF(plants_viewed_python);
+    Py_XDECREF(energy_map_python);
 
     Py_Finalize();
 }
@@ -132,10 +196,6 @@ MindPython::MindPython(const std::string &player_name) : function(NULL) {
 
     function = imind->second.function;
 }
-
-static PyObject *agents_viewed_python = NULL;
-static PyObject *plants_viewed_python = NULL;
-static PyObject *energy_map_python    = NULL;
 
 Action MindPython::act(const AgentMe &me) const {
     const Action defaultAction = Action::doNothing();

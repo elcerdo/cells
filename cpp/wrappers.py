@@ -1,7 +1,5 @@
 __all__=["WrappedMe","WrapperAgent","WrapperPlant","WrappedMap","WrappedView","wrapper"]
 
-import actions
-
 class WrappedMe:
     def __init__(self,team,position,args,energy,loaded,view):
         self.position = position
