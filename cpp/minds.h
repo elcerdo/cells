@@ -6,7 +6,6 @@
 // debug mind: print args, do nothing
 struct MindTest1 : public Mind {
     virtual Action act(const AgentMe &me) const;
-    virtual void initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const;
 };
 
 // spawer mind: spawn agent from plant when it as enough energy

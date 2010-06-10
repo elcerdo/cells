@@ -50,7 +50,6 @@ private:
 
 struct Mind {
     virtual Action act(const AgentMe &me) const = 0;
-    virtual void initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const;
 };
 
 #endif

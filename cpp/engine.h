@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "interface.h"
+#include <iostream>
 
 struct Player {
     struct AgentInternal {
@@ -19,7 +20,7 @@ struct Player {
     Player(const std::string &name, unsigned int color, Mind *mind);
     ~Player();
 
-    void print(std::ostream &os) const;
+    void print(std::ostream &os=std::cout) const;
 
     const std::string name;
     const unsigned int color;
@@ -42,7 +43,7 @@ struct World {
     ~World();
 
     void tick();
-    void print(std::ostream &os) const;
+    void print(std::ostream &os=std::cout) const;
     void addPlayer(const std::string &name, unsigned int color, Mind *mind); 
     void spawnAgent(Player *player, const Point &position, const Arguments &arguments=Arguments());
     bool isGameFinished() const;

@@ -133,11 +133,8 @@ MindPython::MindPython(const std::string &player_name) : function(NULL) {
     function = imind->second.function;
 }
 
-static const Agents *agents_viewed_cc = NULL;
 static PyObject *agents_viewed_python = NULL;
-static const Plants *plants_viewed_cc = NULL;
 static PyObject *plants_viewed_python = NULL;
-static const MapFloat *energy_map_cc  = NULL;
 static PyObject *energy_map_python    = NULL;
 
 Action MindPython::act(const AgentMe &me) const {
@@ -151,9 +148,6 @@ Action MindPython::act(const AgentMe &me) const {
             PyList_Append(agent_args,agent_arg);
             Py_DECREF(agent_arg);
         }
-        assert(&me.agents_viewed == agents_viewed_cc);
-        assert(&me.plants_viewed == plants_viewed_cc);
-        assert(&me.energy_map    == energy_map_cc);
         call_args = Py_BuildValue("(s,(i,i),O,f,i,O,O,O,i,i)",
             me.player.c_str(),
             me.position.x,me.position.y,
@@ -227,9 +221,10 @@ Action MindPython::act(const AgentMe &me) const {
     return defaultAction;
 }
 
-void MindPython::initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const {
+void buildViewedData(const Agents &agents, const Plants &plants) {
+    if (not minds_init) return;
+    //cout<<"rebuilding agents"<<endl;
     Py_XDECREF(agents_viewed_python);
-    agents_viewed_cc = &agents;
     agents_viewed_python = PyList_New(0);
     for (Agents::const_iterator i=agents.begin(); i!=agents.end(); i++) {
         PyObject *item = Py_BuildValue("(s,(i,i))",
@@ -239,8 +234,8 @@ void MindPython::initData(const Agents &agents, const Plants &plants, const MapF
         Py_DECREF(item);
     }
 
+    //cout<<"rebuilding plants"<<endl;
     Py_XDECREF(plants_viewed_python);
-    plants_viewed_cc = &plants;
     plants_viewed_python = PyList_New(0);
     for (Plants::const_iterator i=plants.begin(); i!=plants.end(); i++) {
         PyObject *item = Py_BuildValue("((i,i),f)",
@@ -249,9 +244,12 @@ void MindPython::initData(const Agents &agents, const Plants &plants, const MapF
         PyList_Append(plants_viewed_python,item);
         Py_DECREF(item);
     }
+}
 
+void buildEnergyMap(const MapFloat &energy_map) {
+    if (not minds_init) return;
+    //cout<<"rebuilding energymap"<<endl;
     Py_XDECREF(energy_map_python);
-    energy_map_cc = &energy_map;
     energy_map_python = PyList_New(0);
     for (int k=0; k<energy_map.size; k++) {
         PyObject *item = Py_BuildValue("f",energy_map.flat[k]);

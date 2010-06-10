@@ -10,10 +10,6 @@ Action MindTest1::act(const AgentMe &data) const {
     return Action::moveTo(Point(10,10));
 }
 
-void MindTest1::initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const {
-    cout<<"init data"<<endl;
-}
-
 Action MindTest2::act(const AgentMe &data) const {
     if (data.arguments.empty()) {
         int nennemies = 0;

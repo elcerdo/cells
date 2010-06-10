@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include "mindspython.h"
 
 Player::AgentInternal::AgentInternal(Player *player, const Point &position, const Arguments &arguments) : player(player), position(position), loaded(false), energy(25), arguments(arguments) {}
 
@@ -33,7 +34,7 @@ World::World(int width, int height, int nplants) : deadPlayer(NULL), callbackDat
     for (int i=0; i<plants_map.size; i++) { plants_map.flat[i] = NULL; }
     for (int i=0; i<nplants; i++) {
         Point pt;
-        do { pt = Point::random(width,height); } while(plants_map.isValid(pt) and plants_map.get(pt)!=NULL);
+        do { pt = Point::random(width,height); } while(plants_map.get(pt)!=NULL);
         PlantInternal *plant = new PlantInternal(pt,random_uniform(5,11));
         plants.insert(plant);
         plants_map.get(pt) = plant;
@@ -141,6 +142,9 @@ void World::checkPosition(const Point &position, Agents &agents_viewed, Plants &
 void World::tick() {
     typedef std::vector< std::pair<Player::AgentInternal*,Action> > Actions; // vector for shuffle
 
+    // rebuild python energy map
+    Python::buildEnergyMap(energy_map);
+
     Actions actions;
     { // getting actions
         unsigned int nagents = 0;
@@ -166,10 +170,11 @@ void World::tick() {
                 checkPosition(agent->position.down(),agents_viewed,plants_viewed);
             }
 
-            assert(player->mind);
-            // init mind data
-            player->mind->initData(agents_viewed,plants_viewed,energy_map);
+            // rebuild python viewed data
+            Python::buildViewedData(agents_viewed,plants_viewed);
+
             // query mind
+            assert(player->mind);
             for (Player::AgentInternals::const_iterator iagent=player->agents.begin(); iagent!=player->agents.end(); iagent++) {
                 Player::AgentInternal *agent = *iagent;
                 AgentMe view(player->name,agent->position,agent->arguments,agent->energy,agent->loaded,agents_viewed,plants_viewed,energy_map);
@@ -258,7 +263,7 @@ void World::tick() {
             Point position = plant->position;
             position.x += dx;
             position.y += dy;
-            energy_map.get(position) += plant->eff;
+            if (energy_map.isValid(position))energy_map.get(position) += plant->eff;
         }
     }
 

@@ -23,5 +23,3 @@ Action Action::eat() { return Action(EAT); }
 Action Action::lift() { return Action(LIFT); }
 Action Action::drop() { return Action(DROP); }
 Action Action::doNothing() { return Action(DONOTHING); }
-
-void Mind::initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const {}

@@ -17,11 +17,13 @@ namespace Python {
     MindName getMindName(int index);
     MindNames getMindNames();
     int getMindCount();
+
+    void buildViewedData(const Agents &agents, const Plants &plants);
+    void buildEnergyMap(const MapFloat &energy_map);
     
     struct MindPython : public Mind {
         MindPython(const std::string &player_name);
         virtual Action act(const AgentMe &me) const;
-        virtual void initData(const Agents &agents, const Plants &plants, const MapFloat &energy_map) const;
         PyObject *function;
     };
 
